@@ -1,32 +1,23 @@
 'use client';
-
 interface PixelCharacterProps {
   color: string;
-  direction?: 'horizontal' | 'vertical';
-  size?: number;
+  direction: 'horizontal' | 'vertical';
 }
 
-export default function PixelCharacter({
-  color,
-  direction = 'horizontal',
-  size = 16,
-}: PixelCharacterProps) {
+export default function PixelCharacter({ color, direction }: PixelCharacterProps) {
+  const isH = direction === 'horizontal';
   return (
     <div
-      className="pixel-walk"
+      className={`pixel-walk ${isH ? 'traverse-h' : 'traverse-v'}`}
       style={{
-        width: size,
-        height: size,
         position: 'absolute',
-        fontSize: size * 0.9,
+        fontSize: '14px',
         lineHeight: 1,
-        filter: `drop-shadow(0 0 4px ${color}) drop-shadow(0 0 8px ${color})`,
+        filter: `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 12px ${color})`,
         zIndex: 10,
-        userSelect: 'none',
-        ...(direction === 'horizontal' ? { top: '50%', transform: 'translateY(-50%)' } : { left: '50%', transform: 'translateX(-50%)' }),
       }}
     >
-      🤖
+      ◆
     </div>
   );
 }
