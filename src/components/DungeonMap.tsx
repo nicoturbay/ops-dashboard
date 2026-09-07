@@ -54,21 +54,36 @@ export default function DungeonMap({ projectActivity, recentFeed }: DungeonMapPr
       <div
         className="dungeon-floor"
         style={{
-          padding: '40px',
+          padding: '60px',
           border: '1px solid #1a1a1a',
           background: '#080808',
           position: 'relative',
         }}
       >
+        {/* Ambient glow behind map */}
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          pointerEvents: 'none',
+          zIndex: 0,
+          background: [
+            isActive('clawckie') ? `radial-gradient(ellipse at 20% 30%, ${PROJECT_CONFIG.clawckie.glowColor.replace('0.5','0.08').replace('0.6','0.08')} 0%, transparent 50%)` : '',
+            isActive('coach_clawckie') ? `radial-gradient(ellipse at 80% 30%, ${PROJECT_CONFIG.coach_clawckie.glowColor.replace('0.5','0.08').replace('0.6','0.08')} 0%, transparent 50%)` : '',
+            isActive('kince') ? `radial-gradient(ellipse at 20% 70%, ${PROJECT_CONFIG.kince.glowColor.replace('0.5','0.08').replace('0.6','0.08')} 0%, transparent 50%)` : '',
+            isActive('tremendous') ? `radial-gradient(ellipse at 80% 70%, ${PROJECT_CONFIG.tremendous.glowColor.replace('0.5','0.08').replace('0.6','0.08')} 0%, transparent 50%)` : '',
+          ].filter(Boolean).join(', ') || 'none',
+        }} />
         {/* Map grid: 2x2 rooms with corridors */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '200px 80px 200px',
-            gridTemplateRows: '160px 60px 160px',
+            gridTemplateColumns: '280px 100px 280px',
+            gridTemplateRows: '220px 80px 220px',
             gap: 0,
             alignItems: 'center',
             justifyItems: 'center',
+            position: 'relative',
+            zIndex: 1,
           }}
         >
           {/* Row 1 */}
@@ -125,21 +140,21 @@ export default function DungeonMap({ projectActivity, recentFeed }: DungeonMapPr
           >
             <div
               style={{
-                width: 20,
-                height: 20,
-                background: '#111',
-                border: '1px solid #2a2a2a',
+                width: 24,
+                height: 24,
+                background: '#0a0a12',
+                border: '2px solid #2a2a3a',
                 position: 'relative',
+                boxShadow: '0 0 10px rgba(255,255,255,0.05), 0 0 30px rgba(255,255,255,0.02)',
               }}
             >
-              {/* Intersection node */}
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 3,
-                  background: '#1a1a1a',
-                }}
-              />
+              {/* Intersection node center */}
+              <div style={{ position: 'absolute', inset: 4, background: '#1e1e2e' }} />
+              {/* Radiating lines */}
+              <div style={{ position: 'absolute', top: '50%', left: '-50px', width: '50px', height: '1px', background: 'linear-gradient(90deg, transparent, #2a2a3a)', transform: 'translateY(-50%)' }} />
+              <div style={{ position: 'absolute', top: '50%', right: '-50px', width: '50px', height: '1px', background: 'linear-gradient(90deg, #2a2a3a, transparent)', transform: 'translateY(-50%)' }} />
+              <div style={{ position: 'absolute', left: '50%', top: '-40px', width: '1px', height: '40px', background: 'linear-gradient(180deg, transparent, #2a2a3a)', transform: 'translateX(-50%)' }} />
+              <div style={{ position: 'absolute', left: '50%', bottom: '-40px', width: '1px', height: '40px', background: 'linear-gradient(180deg, #2a2a3a, transparent)', transform: 'translateX(-50%)' }} />
             </div>
           </div>
 
