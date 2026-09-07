@@ -7,17 +7,11 @@ interface ActivityFeedProps {
   activities: AgentActivity[];
 }
 
-function formatRelativeTime(isoString: string): string {
-  const now = Date.now();
-  const then = new Date(isoString).getTime();
-  const diffMs = now - then;
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHr = Math.floor(diffMin / 60);
-
-  if (diffSec < 60) return `${diffSec}s ago`;
-  if (diffMin < 60) return `${diffMin}m ago`;
-  return `${diffHr}h ago`;
+function formatTimestamp(isoString: string): string {
+  const d = new Date(isoString);
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
 }
 
 function statusColor(status: string): string {
@@ -45,6 +39,8 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
     }
     prevLengthRef.current = activities.length;
   }, [activities]);
+
+  const hasRunning = activities.some(a => a.status === 'running');
 
   return (
     <div
@@ -75,11 +71,27 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
             borderRadius: '50%',
             background: '#00ff88',
             boxShadow: '0 0 4px #00ff88',
-          }}
+            '--pulse-shadow': '0 0 4px #00ff88',
+            '--pulse-shadow-large': '0 0 12px #00ff88',
+          } as React.CSSProperties}
         />
         <span style={{ color: '#555', fontSize: '7px', letterSpacing: '1px' }}>
           ACTIVITY LOG — LAST {activities.length} EVENTS
         </span>
+        {hasRunning && (
+          <span
+            className="cursor-blink"
+            style={{
+              marginLeft: '8px',
+              color: '#00ff88',
+              fontSize: '6px',
+              letterSpacing: '2px',
+              textShadow: '0 0 6px #00ff88',
+            }}
+          >
+            ● LIVE
+          </span>
+        )}
       </div>
 
       {/* Feed entries */}
@@ -87,13 +99,13 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
         ref={scrollRef}
         className="feed-scroll"
         style={{
-          height: '120px',
+          height: '140px',
           overflowY: 'auto',
-          padding: '8px 16px',
+          padding: '8px 0',
         }}
       >
         {activities.length === 0 ? (
-          <div style={{ color: '#333', fontSize: '7px', padding: '16px 0' }}>
+          <div style={{ color: '#333', fontSize: '7px', padding: '16px 20px' }}>
             &gt; NO ACTIVITY RECORDED YET...
           </div>
         ) : (
@@ -106,12 +118,17 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
                   display: 'flex',
                   alignItems: 'flex-start',
                   gap: '8px',
-                  marginBottom: '6px',
+                  marginBottom: '4px',
                   opacity: Math.max(0.3, 1 - index * 0.04),
-                  fontSize: '6px',
+                  fontSize: '7px',
                   lineHeight: '1.6',
+                  paddingLeft: '0',
+                  borderLeft: `2px solid ${config.color}`,
+                  paddingRight: '16px',
                 }}
               >
+                {/* Left color bar spacing */}
+                <div style={{ width: '14px', flexShrink: 0 }} />
                 <span style={{ color: '#333', flexShrink: 0 }}>&gt;</span>
                 <span
                   style={{
@@ -141,8 +158,8 @@ export default function ActivityFeed({ activities }: ActivityFeedProps) {
                 >
                   {activity.status.toUpperCase()}
                 </span>
-                <span style={{ color: '#333', flexShrink: 0 }}>
-                  {formatRelativeTime(activity.created_at)}
+                <span style={{ color: '#333', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+                  {formatTimestamp(activity.created_at)}
                 </span>
               </div>
             );
