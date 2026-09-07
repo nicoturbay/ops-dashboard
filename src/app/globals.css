@@ -3,247 +3,170 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Base styles */
 :root {
-  --bg-primary: #0a0a0a;
-  --text-primary: #e0e0e0;
-  --scanline-opacity: 0.03;
+  --bg-primary: #050508;
+  --scanline-opacity: 0.06;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-html,
-body {
+html, body {
   background-color: var(--bg-primary);
-  color: var(--text-primary);
+  color: #e0e0e0;
   font-family: 'Press Start 2P', cursive;
   min-height: 100vh;
-  overflow-x: hidden;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-}
-
-/* CRT Screen flicker animation */
-@keyframes screen-flicker {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  92% {
-    opacity: 1;
-  }
-  92.5% {
-    opacity: 0.98;
-  }
-  93% {
-    opacity: 1;
-  }
-  96% {
-    opacity: 0.97;
-  }
-  96.5% {
-    opacity: 1;
-  }
-}
-
-body {
-  animation: screen-flicker 8s infinite;
-}
-
-/* Blinking cursor animation */
-@keyframes cursor-blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-}
-
-.cursor-blink {
-  animation: cursor-blink 1s step-end infinite;
-}
-
-/* Neon pulse animation */
-@keyframes neon-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-.neon-pulse {
-  animation: neon-pulse 2s ease-in-out infinite;
-}
-
-/* Pixel character walk animation - 2 frame sprite */
-@keyframes pixel-walk {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-2px);
-  }
-}
-
-.pixel-walk {
-  animation: pixel-walk 0.4s steps(1) infinite;
-}
-
-/* Corridor traverse animation */
-@keyframes traverse-horizontal {
-  0% {
-    left: 0%;
-  }
-  100% {
-    left: calc(100% - 16px);
-  }
-}
-
-@keyframes traverse-vertical {
-  0% {
-    top: 0%;
-  }
-  100% {
-    top: calc(100% - 16px);
-  }
-}
-
-.traverse-h {
-  animation: traverse-horizontal 3s linear infinite;
-}
-
-.traverse-v {
-  animation: traverse-vertical 3s linear infinite;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #111;
-  border: 1px solid #222;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border: 1px solid #555;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* Terminal typing animation */
-@keyframes type-in {
-  from {
-    max-height: 0;
-    opacity: 0;
-  }
-  to {
-    max-height: 500px;
-    opacity: 1;
-  }
-}
-
-.terminal-line {
-  animation: type-in 0.3s ease forwards;
   overflow: hidden;
+  image-rendering: pixelated;
 }
 
-/* Dungeon floor texture */
+/* Dramatic CRT flicker */
+@keyframes screen-flicker {
+  0%, 89%, 91%, 93%, 95%, 97%, 100% { opacity: 1; }
+  90% { opacity: 0.96; }
+  92% { opacity: 0.98; }
+  94% { opacity: 0.95; }
+  96% { opacity: 0.97; }
+  98% { opacity: 0.93; }
+}
+body { animation: screen-flicker 10s infinite; }
+
+/* Blinking cursor */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.cursor-blink { animation: cursor-blink 0.8s step-end infinite; }
+
+/* Neon pulse for active rooms */
+@keyframes neon-pulse {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.85; filter: brightness(1.2); }
+}
+.neon-pulse { animation: neon-pulse 2s ease-in-out infinite; }
+
+/* Status dot pulse */
+@keyframes status-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; box-shadow: var(--pulse-shadow); }
+  50% { transform: scale(1.8); opacity: 0.6; box-shadow: var(--pulse-shadow-large); }
+}
+.status-pulse { animation: status-pulse 1.2s ease-in-out infinite; }
+
+/* Room active glow — deeper, more layered */
+@keyframes room-glow {
+  0%, 100% {
+    box-shadow: 
+      0 0 10px var(--room-glow),
+      0 0 30px var(--room-glow),
+      0 0 60px var(--room-glow),
+      inset 0 0 20px rgba(0,0,0,0.8);
+  }
+  50% {
+    box-shadow: 
+      0 0 20px var(--room-glow),
+      0 0 60px var(--room-glow),
+      0 0 120px var(--room-glow),
+      0 0 160px var(--room-glow-dim),
+      inset 0 0 20px rgba(0,0,0,0.8);
+  }
+}
+.room-active-glow { animation: room-glow 2.5s ease-in-out infinite; }
+
+/* Scan sweep line */
+@keyframes scan-sweep {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 0.15; }
+  90% { opacity: 0.15; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+.scan-sweep {
+  position: fixed;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  animation: scan-sweep 6s linear infinite;
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* Pixel walk */
+@keyframes pixel-walk {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+.pixel-walk { animation: pixel-walk 0.35s steps(1) infinite; }
+
+/* Traverse animations */
+@keyframes traverse-horizontal {
+  0% { left: -20px; }
+  100% { left: calc(100% + 4px); }
+}
+@keyframes traverse-vertical {
+  0% { top: -20px; }
+  100% { top: calc(100% + 4px); }
+}
+.traverse-h { animation: traverse-horizontal 2.5s linear infinite; }
+.traverse-v { animation: traverse-vertical 2.5s linear infinite; }
+
+/* Dungeon floor — subtle dot grid */
 .dungeon-floor {
-  background-image: radial-gradient(circle, #1a1a1a 1px, transparent 1px);
-  background-size: 20px 20px;
+  background-image: 
+    radial-gradient(circle, #151520 1px, transparent 1px),
+    radial-gradient(circle, #0d0d14 1px, transparent 1px);
+  background-size: 24px 24px, 48px 48px;
+  background-position: 0 0, 12px 12px;
 }
 
-/* Room corner decorations */
-.room-corner-tl::before,
-.room-corner-tl::after,
-.room-corner-tr::before,
-.room-corner-tr::after,
-.room-corner-bl::before,
-.room-corner-bl::after,
-.room-corner-br::before,
-.room-corner-br::after {
-  content: '';
-  position: absolute;
-  width: 8px;
-  height: 8px;
+/* Text glow */
+.text-glow-white {
+  text-shadow: 
+    0 0 8px rgba(255,255,255,0.9),
+    0 0 20px rgba(255,255,255,0.6),
+    0 0 50px rgba(255,255,255,0.3);
 }
 
-/* Scanline overlay via pseudo-element */
+/* Scanline overlay */
 .crt-scanlines::after {
   content: '';
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
   background: repeating-linear-gradient(
     0deg,
     transparent,
     transparent 2px,
-    rgba(0, 0, 0, var(--scanline-opacity)) 2px,
-    rgba(0, 0, 0, var(--scanline-opacity)) 4px
+    rgba(0, 0, 0, 0.06) 2px,
+    rgba(0, 0, 0, 0.06) 4px
   );
   pointer-events: none;
   z-index: 9999;
 }
 
-/* Room active glow keyframe */
-@keyframes room-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 10px var(--room-glow), 0 0 20px var(--room-glow), inset 0 0 10px rgba(0, 0, 0, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 20px var(--room-glow), 0 0 40px var(--room-glow), 0 0 60px var(--room-glow),
-      inset 0 0 10px rgba(0, 0, 0, 0.5);
-  }
+/* Terminal line animation */
+@keyframes type-in {
+  from { max-height: 0; opacity: 0; }
+  to { max-height: 200px; opacity: 1; }
+}
+.terminal-line {
+  animation: type-in 0.2s ease forwards;
+  overflow: hidden;
 }
 
-.room-active-glow {
-  animation: room-glow 2s ease-in-out infinite;
+/* Background ambient glow behind the grid */
+@keyframes ambient-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
 }
 
-/* Status dot pulse */
-@keyframes status-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.5);
-    opacity: 0.7;
-  }
-}
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #080808; }
+::-webkit-scrollbar-thumb { background: #222; }
+::-webkit-scrollbar-thumb:hover { background: #333; }
 
-.status-pulse {
-  animation: status-pulse 1.5s ease-in-out infinite;
+/* Data bar fill animation */
+@keyframes bar-fill {
+  from { width: 0%; }
+  to { width: var(--bar-width); }
 }
-
-/* Retro text glow */
-.text-glow-white {
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.5),
-    0 0 40px rgba(255, 255, 255, 0.3);
-}
-
-/* Feed scroll */
-.feed-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: #333 #111;
-}
+.data-bar { animation: bar-fill 1.5s ease-out forwards; }
