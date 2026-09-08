@@ -126,7 +126,7 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
                 strokeWidth="2.5"
                 fill="none"
                 strokeLinecap="square"
-                opacity={isActive ? 1 : 0.18}
+                opacity={isActive ? 1 : 0.65}
                 filter={isActive ? `url(#gf-${c.project})` : undefined}
                 style={{ transition: 'opacity 0.8s ease' }}
               />
@@ -138,7 +138,7 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
                 strokeWidth="0.6"
                 fill="none"
                 strokeLinecap="square"
-                opacity={isActive ? 0.5 : 0.05}
+                opacity={isActive ? 0.5 : 0.3}
                 style={{ transition: 'opacity 0.8s ease' }}
               />
 
@@ -150,7 +150,7 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
                 strokeDasharray="4 12"
                 fill="none"
                 strokeLinecap="square"
-                opacity={isActive ? 0.2 : 0.04}
+                opacity={isActive ? 0.2 : 0.12}
                 style={{ transition: 'opacity 0.8s ease' }}
               />
 
@@ -160,7 +160,7 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
                 cy={c.bend.y}
                 r="4"
                 fill={c.color}
-                opacity={isActive ? 0.9 : 0.15}
+                opacity={isActive ? 0.9 : 0.6}
                 filter={isActive ? `url(#gf-${c.project})` : undefined}
                 style={{ transition: 'opacity 0.8s ease' }}
               />
@@ -169,13 +169,13 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
                 cy={c.bend.y}
                 r="2"
                 fill="#fff"
-                opacity={isActive ? 0.6 : 0.05}
+                opacity={isActive ? 0.6 : 0.35}
                 style={{ transition: 'opacity 0.8s ease' }}
               />
 
               {/* Endpoint dots */}
-              <circle cx={c.start.x} cy={c.start.y} r="3.5" fill={c.color} opacity={isActive ? 0.7 : 0.1} style={{ transition: 'opacity 0.8s ease' }} />
-              <circle cx={c.end.x}   cy={c.end.y}   r="3.5" fill={c.color} opacity={isActive ? 0.7 : 0.1} style={{ transition: 'opacity 0.8s ease' }} />
+              <circle cx={c.start.x} cy={c.start.y} r="3.5" fill={c.color} opacity={isActive ? 0.7 : 0.5} style={{ transition: 'opacity 0.8s ease' }} />
+              <circle cx={c.end.x}   cy={c.end.y}   r="3.5" fill={c.color} opacity={isActive ? 0.7 : 0.5} style={{ transition: 'opacity 0.8s ease' }} />
 
               {/* Animated pulse dots — 2 per cable, slow and clean */}
               {isActive && [0, 1].map(i => (
