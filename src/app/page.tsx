@@ -79,7 +79,7 @@ export default function Home() {
             gridTemplateColumns: '1fr auto 1fr',
             gridTemplateRows: '1fr auto 1fr',
             padding: '20px',
-            gap: '50px',
+            gap: '16px',
             minHeight: 0,
             overflow: 'visible',
           }}
