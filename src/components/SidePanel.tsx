@@ -80,7 +80,7 @@ export default function SidePanel({ activities }: SidePanelProps) {
     <div style={{
       width: 340,
       flexShrink: 0,
-      background: 'transparent',
+      background: '#07070f',
       borderRight: '1px solid #2a2a2a',
       display: 'flex',
       flexDirection: 'column',
