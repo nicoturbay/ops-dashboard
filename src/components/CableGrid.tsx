@@ -1,202 +1,233 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-
-interface CableGridProps {
-  activeProjects: string[];
-}
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 const PROJECT_COLORS: Record<string, string> = {
-  clawckie: '#FF6B00',
+  clawckie:       '#FF6B00',
   coach_clawckie: '#00CC44',
-  kince: '#B388FF',
-  tremendous: '#FF1493',
+  kince:          '#B388FF',
+  tremendous:     '#FF1493',
 };
 
-// Corner order matches the grid: tl, tr, bl, br
-const CORNERS = [
-  { id: 'clawckie',      label: 'tl' },
-  { id: 'coach_clawckie', label: 'tr' },
-  { id: 'kince',          label: 'bl' },
-  { id: 'tremendous',     label: 'br' },
+// Which corner of the room connects to which corner of the HQ
+// innerCorner: 'br' | 'bl' | 'tr' | 'tl' (of the room)
+// hqCorner: 'tl' | 'tr' | 'bl' | 'br' (of the HQ)
+// horizontalFirst: true = go H then V; false = go V then H
+const CABLE_CONFIG = [
+  { roomId: 'room-clawckie',   project: 'clawckie',       roomCorner: 'br', hqCorner: 'tl', delay: 0    },
+  { roomId: 'room-coach',      project: 'coach_clawckie', roomCorner: 'bl', hqCorner: 'tr', delay: 0.6  },
+  { roomId: 'room-kince',      project: 'kince',           roomCorner: 'tr', hqCorner: 'bl', delay: 1.2  },
+  { roomId: 'room-tremendous', project: 'tremendous',      roomCorner: 'tl', hqCorner: 'br', delay: 1.8  },
 ];
 
-interface Dims {
-  w: number;
-  h: number;
-  hqX: number;
-  hqY: number;
-  roomW: number;
-  roomH: number;
-  pad: number;
+interface CablePoint { x: number; y: number }
+interface CableData {
+  project: string;
+  color: string;
+  start: CablePoint;
+  bend: CablePoint;
+  end: CablePoint;
+  delay: number;
+  pathD: string;
 }
 
-function getCableEndpoints(dims: Dims) {
-  const { w, h, hqX, hqY, roomW, roomH, pad } = dims;
-
-  // Room centers in the 4 corners
-  const tl = { x: pad + roomW / 2, y: pad + roomH / 2 };
-  const tr = { x: w - pad - roomW / 2, y: pad + roomH / 2 };
-  const bl = { x: pad + roomW / 2, y: h - pad - roomH / 2 };
-  const br = { x: w - pad - roomW / 2, y: h - pad - roomH / 2 };
-
-  return [
-    { project: 'clawckie',       from: { x: hqX, y: hqY }, to: tl,  color: PROJECT_COLORS['clawckie'],       delay: 0 },
-    { project: 'coach_clawckie', from: { x: hqX, y: hqY }, to: tr,  color: PROJECT_COLORS['coach_clawckie'], delay: 0.5 },
-    { project: 'kince',          from: { x: hqX, y: hqY }, to: bl,  color: PROJECT_COLORS['kince'],           delay: 1.0 },
-    { project: 'tremendous',     from: { x: hqX, y: hqY }, to: br,  color: PROJECT_COLORS['tremendous'],      delay: 1.5 },
-  ];
+function getCornerPoint(rect: DOMRect, corner: string, containerRect: DOMRect): CablePoint {
+  const x = corner.endsWith('l') ? rect.left - containerRect.left : rect.right - containerRect.left;
+  const y = corner.startsWith('t') ? rect.top - containerRect.top : rect.bottom - containerRect.top;
+  return { x, y };
 }
 
-function bezierPath(
-  from: { x: number; y: number },
-  to: { x: number; y: number }
-): string {
-  // Control points: bend toward the destination with a gentle curve
-  const mx = (from.x + to.x) / 2;
-  const my = (from.y + to.y) / 2;
-  // Offset control points perpendicular-ish to add a subtle arc
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const cx1 = from.x + dx * 0.35;
-  const cy1 = from.y + dy * 0.15;
-  const cx2 = from.x + dx * 0.65;
-  const cy2 = from.y + dy * 0.85;
-  return `M ${from.x} ${from.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${to.x} ${to.y}`;
+function buildLPath(start: CablePoint, end: CablePoint): { bend: CablePoint; pathD: string } {
+  // Go horizontal first (same Y as start), then vertical to end
+  // This matches the circuit-trace look: H then V
+  const bend: CablePoint = { x: end.x, y: start.y };
+  const pathD = `M ${start.x} ${start.y} H ${end.x} V ${end.y}`;
+  return { bend, pathD };
 }
 
-export default function CableGrid({ activeProjects }: CableGridProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [dims, setDims] = useState<Dims | null>(null);
+export default function CableGrid({ activeProjects }: { activeProjects: string[] }) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [cables, setCables] = useState<CableData[]>([]);
+  const [svgSize, setSvgSize] = useState({ w: 0, h: 0 });
 
-  useEffect(() => {
-    function measure() {
-      const el = containerRef.current;
-      if (!el) return;
-      const w = el.offsetWidth;
-      const h = el.offsetHeight;
-      const pad = 16;
+  const measure = useCallback(() => {
+    const stage = document.getElementById('dungeon-stage');
+    const hqEl = document.getElementById('central-hq');
+    if (!stage || !hqEl) return;
 
-      // Room size mirrors DungeonMap clamp logic — approximate for cable endpoints
-      const roomW = Math.min(340, Math.max(180, w * 0.22));
-      const roomH = Math.min(270, Math.max(140, w * 0.17));
+    const stageRect = stage.getBoundingClientRect();
+    const hqRect = hqEl.getBoundingClientRect();
+    setSvgSize({ w: stageRect.width, h: stageRect.height });
 
-      // HQ center — grid center
-      const hqX = w / 2;
-      const hqY = h / 2;
+    const computed: CableData[] = [];
+    for (const cfg of CABLE_CONFIG) {
+      const roomEl = document.getElementById(cfg.roomId);
+      if (!roomEl) continue;
+      const roomRect = roomEl.getBoundingClientRect();
 
-      setDims({ w, h, hqX, hqY, roomW, roomH, pad });
+      const start = getCornerPoint(roomRect, cfg.roomCorner, stageRect);
+      const end   = getCornerPoint(hqRect,   cfg.hqCorner,   stageRect);
+      const { bend, pathD } = buildLPath(start, end);
+
+      computed.push({
+        project: cfg.project,
+        color: PROJECT_COLORS[cfg.project],
+        start, bend, end,
+        delay: cfg.delay,
+        pathD,
+      });
     }
-
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (containerRef.current) ro.observe(containerRef.current);
-    return () => ro.disconnect();
+    setCables(computed);
   }, []);
 
-  const cables = dims ? getCableEndpoints(dims) : [];
+  useEffect(() => {
+    // Measure after first paint and on resize
+    const timer = setTimeout(measure, 100);
+    const ro = new ResizeObserver(measure);
+    const stage = document.getElementById('dungeon-stage');
+    if (stage) ro.observe(stage);
+    return () => { clearTimeout(timer); ro.disconnect(); };
+  }, [measure]);
+
+  if (!svgSize.w || !svgSize.h) return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5 }} />
+  );
 
   return (
-    <div ref={containerRef} style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5 }}>
-      {dims && (
-        <svg
-          width={dims.w}
-          height={dims.h}
-          style={{ position: 'absolute', inset: 0, overflow: 'visible' }}
-        >
-          <defs>
-            {cables.map(c => (
-              <filter key={`gf-${c.project}`} id={`gf-${c.project}`} x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="3" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            ))}
-          </defs>
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5 }}>
+      <svg
+        ref={svgRef}
+        width={svgSize.w}
+        height={svgSize.h}
+        style={{ position: 'absolute', top: 0, left: 0, overflow: 'visible' }}
+      >
+        <defs>
+          {cables.map(c => (
+            <filter key={`gf-${c.project}`} id={`gf-${c.project}`} x="-100%" y="-100%" width="300%" height="300%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          ))}
+        </defs>
 
-          {cables.map(c => {
-            const isActive = activeProjects.includes(c.project);
-            const d = bezierPath(c.from, c.to);
+        {cables.map(c => {
+          const isActive = activeProjects.includes(c.project);
+          return (
+            <g key={c.project}>
+              {/* Shadow gutter */}
+              <path d={c.pathD} stroke="#000" strokeWidth="7" fill="none" strokeLinecap="square" opacity="0.8" />
 
-            return (
-              <g key={c.project}>
-                {/* Shadow/gutter */}
-                <path d={d} stroke="#0a0a0a" strokeWidth="6" fill="none" strokeLinecap="round" />
+              {/* Main glowing cable */}
+              <path
+                d={c.pathD}
+                stroke={c.color}
+                strokeWidth="2.5"
+                fill="none"
+                strokeLinecap="square"
+                opacity={isActive ? 1 : 0.18}
+                filter={isActive ? `url(#gf-${c.project})` : undefined}
+                style={{ transition: 'opacity 0.8s ease' }}
+              />
 
-                {/* Main tube — thick base */}
-                <path
-                  d={d}
-                  stroke={c.color}
-                  strokeWidth="3"
-                  fill="none"
-                  strokeLinecap="round"
-                  opacity={isActive ? 0.85 : 0.15}
-                  filter={isActive ? `url(#gf-${c.project})` : undefined}
-                  style={{ transition: 'opacity 0.6s ease' }}
-                />
+              {/* Bright inner core */}
+              <path
+                d={c.pathD}
+                stroke="#ffffff"
+                strokeWidth="0.6"
+                fill="none"
+                strokeLinecap="square"
+                opacity={isActive ? 0.5 : 0.05}
+                style={{ transition: 'opacity 0.8s ease' }}
+              />
 
-                {/* Inner highlight — thinner, brighter */}
-                <path
-                  d={d}
-                  stroke="#ffffff"
-                  strokeWidth="0.8"
-                  fill="none"
-                  strokeLinecap="round"
-                  opacity={isActive ? 0.25 : 0.04}
-                  style={{ transition: 'opacity 0.6s ease' }}
-                />
+              {/* Segment marks — circuit board style */}
+              <path
+                d={c.pathD}
+                stroke={c.color}
+                strokeWidth="2.5"
+                strokeDasharray="4 12"
+                fill="none"
+                strokeLinecap="square"
+                opacity={isActive ? 0.2 : 0.04}
+                style={{ transition: 'opacity 0.8s ease' }}
+              />
 
-                {/* Segment dashes — pipe texture */}
-                <path
-                  d={d}
-                  stroke={c.color}
-                  strokeWidth="3"
-                  strokeDasharray="6 10"
-                  fill="none"
-                  strokeLinecap="round"
-                  opacity={isActive ? 0.3 : 0.06}
-                  style={{ transition: 'opacity 0.6s ease' }}
-                />
+              {/* Corner dot — where the bend is */}
+              <circle
+                cx={c.bend.x}
+                cy={c.bend.y}
+                r="4"
+                fill={c.color}
+                opacity={isActive ? 0.9 : 0.15}
+                filter={isActive ? `url(#gf-${c.project})` : undefined}
+                style={{ transition: 'opacity 0.8s ease' }}
+              />
+              <circle
+                cx={c.bend.x}
+                cy={c.bend.y}
+                r="2"
+                fill="#fff"
+                opacity={isActive ? 0.6 : 0.05}
+                style={{ transition: 'opacity 0.8s ease' }}
+              />
 
-                {/* Animated pulse dots — 3 per cable */}
-                {isActive && [0, 1, 2].map(i => (
-                  <circle key={i} r="4" fill={c.color} opacity="1">
-                    <filter id={`dot-glow-${c.project}-${i}`}>
-                      <feGaussianBlur stdDeviation="2.5" result="blur" />
-                      <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-                    </filter>
+              {/* Endpoint dots */}
+              <circle cx={c.start.x} cy={c.start.y} r="3.5" fill={c.color} opacity={isActive ? 0.7 : 0.1} style={{ transition: 'opacity 0.8s ease' }} />
+              <circle cx={c.end.x}   cy={c.end.y}   r="3.5" fill={c.color} opacity={isActive ? 0.7 : 0.1} style={{ transition: 'opacity 0.8s ease' }} />
+
+              {/* Animated pulse dots — 2 per cable, slow and clean */}
+              {isActive && [0, 1].map(i => (
+                <g key={i}>
+                  <circle r="5" fill={c.color} opacity="0.0">
                     <animateMotion
-                      dur="2.2s"
-                      begin={`${c.delay + i * 0.73}s`}
+                      dur="3.5s"
+                      begin={`${c.delay + i * 1.75}s`}
                       repeatCount="indefinite"
-                      path={d}
-                      calcMode="spline"
-                      keyTimes="0;1"
-                      keySplines="0.25 0.1 0.25 1"
+                      path={c.pathD}
+                      calcMode="linear"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="0;0.9;0.9;0"
+                      keyTimes="0;0.08;0.88;1"
+                      dur="3.5s"
+                      begin={`${c.delay + i * 1.75}s`}
+                      repeatCount="indefinite"
                     />
                     <animate
                       attributeName="r"
                       values="3;5;3"
-                      dur="2.2s"
-                      begin={`${c.delay + i * 0.73}s`}
-                      repeatCount="indefinite"
-                    />
-                    <animate
-                      attributeName="opacity"
-                      values="0;1;1;0"
-                      keyTimes="0;0.1;0.85;1"
-                      dur="2.2s"
-                      begin={`${c.delay + i * 0.73}s`}
+                      dur="3.5s"
+                      begin={`${c.delay + i * 1.75}s`}
                       repeatCount="indefinite"
                     />
                   </circle>
-                ))}
-              </g>
-            );
-          })}
-        </svg>
-      )}
+                  {/* Inner white core of pulse */}
+                  <circle r="2" fill="#fff" opacity="0.0">
+                    <animateMotion
+                      dur="3.5s"
+                      begin={`${c.delay + i * 1.75}s`}
+                      repeatCount="indefinite"
+                      path={c.pathD}
+                      calcMode="linear"
+                    />
+                    <animate
+                      attributeName="opacity"
+                      values="0;0.8;0.8;0"
+                      keyTimes="0;0.08;0.88;1"
+                      dur="3.5s"
+                      begin={`${c.delay + i * 1.75}s`}
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+                </g>
+              ))}
+            </g>
+          );
+        })}
+      </svg>
     </div>
   );
 }
