@@ -8,13 +8,14 @@ const PROJECT_COLORS: Record<string, string> = {
   tremendous:     '#FF1493',
 };
 
-// Straight diagonal cables from HQ center → each room's inner corner.
-// Feels like spokes radiating from the hub outward.
+// Irregular bezier cables — each has unique control point offsets so they
+// curve differently and feel organic. All converge at HQ center.
+// cp1/cp2 are fractions of the (end→start) vector, offset perpendicularly.
 const CABLE_CONFIG = [
-  { roomId: 'room-clawckie',   project: 'clawckie',       roomCorner: 'br', delay: 0   },
-  { roomId: 'room-coach',      project: 'coach_clawckie', roomCorner: 'bl', delay: 0.6 },
-  { roomId: 'room-kince',      project: 'kince',          roomCorner: 'tr', delay: 1.2 },
-  { roomId: 'room-tremendous', project: 'tremendous',     roomCorner: 'tl', delay: 1.8 },
+  { roomId: 'room-clawckie',   project: 'clawckie',       roomCorner: 'br', delay: 0,   cp1: { t: 0.25, n:  0.30 }, cp2: { t: 0.65, n: -0.15 } },
+  { roomId: 'room-coach',      project: 'coach_clawckie', roomCorner: 'bl', delay: 0.6, cp1: { t: 0.20, n: -0.25 }, cp2: { t: 0.70, n:  0.20 } },
+  { roomId: 'room-kince',      project: 'kince',          roomCorner: 'tr', delay: 1.2, cp1: { t: 0.30, n:  0.20 }, cp2: { t: 0.60, n: -0.30 } },
+  { roomId: 'room-tremendous', project: 'tremendous',     roomCorner: 'tl', delay: 1.8, cp1: { t: 0.22, n: -0.18 }, cp2: { t: 0.72, n:  0.28 } },
 ];
 
 interface Pt { x: number; y: number }
@@ -22,7 +23,6 @@ interface CableData {
   project: string;
   color: string;
   pathD: string;
-  bend: Pt;
   start: Pt;
   end: Pt;
   delay: number;
@@ -44,6 +44,30 @@ function centerPt(rect: DOMRect, ref: DOMRect): Pt {
     x: (rect.left + rect.right) / 2 - ref.left,
     y: (rect.top  + rect.bottom) / 2 - ref.top,
   };
+}
+
+// Build a cubic bezier path from start → end with control points defined
+// as fractions along the path (t) + perpendicular offset (n).
+function bezierPath(
+  start: Pt, end: Pt,
+  cp1: { t: number; n: number },
+  cp2: { t: number; n: number }
+): string {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  // Perpendicular unit vector
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const nx = -dy / len;
+  const ny =  dx / len;
+  const c1: Pt = {
+    x: start.x + dx * cp1.t + nx * len * cp1.n,
+    y: start.y + dy * cp1.t + ny * len * cp1.n,
+  };
+  const c2: Pt = {
+    x: start.x + dx * cp2.t + nx * len * cp2.n,
+    y: start.y + dy * cp2.t + ny * len * cp2.n,
+  };
+  return `M ${start.x} ${start.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${end.x} ${end.y}`;
 }
 
 export default function CableGrid({ activeProjects }: { activeProjects: string[] }) {
@@ -68,16 +92,15 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
       if (!roomEl) continue;
       const rr = roomEl.getBoundingClientRect();
 
-      // Cable goes from HQ center → room inner corner (straight diagonal)
-      const start = hqCenter;
-      const end   = cornerPt(rr, cfg.roomCorner, sr);
-      const pathD = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
-      const bend  = start; // no bend for straight lines
+      // Cable: room corner → HQ center, with unique bezier curve per cable
+      const start = cornerPt(rr, cfg.roomCorner, sr);
+      const end   = hqCenter;
+      const pathD = bezierPath(start, end, cfg.cp1, cfg.cp2);
 
       result.push({
         project: cfg.project,
         color: PROJECT_COLORS[cfg.project],
-        pathD, bend, start, end,
+        pathD, start, end,
         delay: cfg.delay,
       });
     }
@@ -138,8 +161,8 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
                 <path d={c.pathD} stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round"
                   opacity={active ? 0.7 : 0.4} style={{ transition: 'opacity 0.8s ease' }} />
                 {/* Room endpoint dot */}
-                <circle cx={c.end.x} cy={c.end.y} r="10" fill={c.color} opacity={active ? 1 : 0.75} filter={`url(#gf-${c.project})`} />
-                <circle cx={c.end.x} cy={c.end.y} r="5"  fill="#fff"    opacity={active ? 0.9 : 0.5} />
+                <circle cx={c.start.x} cy={c.start.y} r="10" fill={c.color} opacity={active ? 1 : 0.75} filter={`url(#gf-${c.project})`} />
+                <circle cx={c.start.x} cy={c.start.y} r="5"  fill="#fff"    opacity={active ? 0.9 : 0.5} />
 
                 {active && [0, 1].map(i => (
                   <g key={i}>
