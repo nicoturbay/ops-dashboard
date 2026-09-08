@@ -51,32 +51,30 @@ export default function PixelRoom({ project, isActive }: PixelRoomProps) {
         }} />
       )}
 
-      {/* Agent illustration — bottom-center of room */}
-      <div style={{
-        position: 'absolute',
-        bottom: 22,   // above the task bar
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '18%',
-        zIndex: 3,
-        opacity: isActive ? 1 : 0.2,
-        transition: 'opacity 0.6s ease',
-        animation: isActive ? 'agent-bob 2.5s ease-in-out infinite' : undefined,
-        filter: isActive
-          ? `drop-shadow(0 0 10px ${config.color}) drop-shadow(0 2px 4px rgba(0,0,0,0.8))`
-          : 'none',
-      }}>
-        <img
-          src={AGENT_IMAGE[project]}
-          alt={`${project} agent`}
-          style={{
-            width: '100%',
-            height: 'auto',
-            imageRendering: 'pixelated',
-            display: 'block',
-          }}
-        />
-      </div>
+      {/* Agent illustration — only visible when work is active */}
+      {isActive && (
+        <div style={{
+          position: 'absolute',
+          bottom: 22,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '18%',
+          zIndex: 3,
+          animation: 'agent-bob 2.5s ease-in-out infinite',
+          filter: `drop-shadow(0 0 10px ${config.color}) drop-shadow(0 2px 4px rgba(0,0,0,0.8))`,
+        }}>
+          <img
+            src={AGENT_IMAGE[project]}
+            alt={`${project} agent`}
+            style={{
+              width: '100%',
+              height: 'auto',
+              imageRendering: 'pixelated',
+              display: 'block',
+            }}
+          />
+        </div>
+      )}
 
       <style>{`
         @keyframes agent-bob {
