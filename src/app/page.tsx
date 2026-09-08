@@ -43,18 +43,7 @@ export default function Home() {
       overflow: 'hidden',
       position: 'relative',
     }}>
-      {/* Full-site background image at 50% opacity */}
-      <div style={{
-        position: 'absolute',
-        inset: 0,
-        backgroundImage: 'url(/bg.png)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        opacity: 0.5,
-        pointerEvents: 'none',
-        zIndex: 0,
-      }} />
+
 
       <CRTOverlay />
 
@@ -64,7 +53,8 @@ export default function Home() {
         borderBottom: '1px solid #111',
         textAlign: 'center',
         flexShrink: 0,
-        background: 'transparent',
+        background: '#000',
+        zIndex: 1,
       }}>
         <h1 style={{ fontSize: 'clamp(11px, 1.8vw, 22px)', color: '#fff', letterSpacing: '6px', marginBottom: 4, textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
           MISSION CONTROL
@@ -75,15 +65,18 @@ export default function Home() {
       </header>
 
       {/* Main */}
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '2fr 4fr', overflow: 'hidden', minHeight: 0 }}>
         <SidePanel activities={recentFeed} />
 
-        {/* Stage */}
+        {/* Stage — background image lives here only */}
         <div
           id="dungeon-stage"
           style={{
-            flex: 1,
             position: 'relative',
+            backgroundImage: 'url(/bg.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
             display: 'grid',
             gridTemplateAreas: `
               "tl . tr"
@@ -153,8 +146,9 @@ export default function Home() {
       {/* Status bar */}
       <div style={{
         padding: '5px 16px',
-        background: 'transparent',
+        background: '#000',
         borderTop: '1px solid #1a1a1a',
+        zIndex: 1,
         display: 'flex',
         alignItems: 'center',
         gap: 8,
