@@ -41,7 +41,21 @@ export default function Home() {
       flexDirection: 'column',
       fontFamily: '"Press Start 2P", cursive',
       overflow: 'hidden',
+      position: 'relative',
     }}>
+      {/* Full-site background image at 50% opacity */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        backgroundImage: 'url(/bg.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        opacity: 0.5,
+        pointerEvents: 'none',
+        zIndex: 0,
+      }} />
+
       <CRTOverlay />
 
       {/* Header */}
@@ -50,7 +64,7 @@ export default function Home() {
         borderBottom: '1px solid #111',
         textAlign: 'center',
         flexShrink: 0,
-        background: 'linear-gradient(180deg, #08080e, #050508)',
+        background: 'transparent',
       }}>
         <h1 style={{ fontSize: 'clamp(11px, 1.8vw, 22px)', color: '#fff', letterSpacing: '6px', marginBottom: 4, textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
           MISSION CONTROL
@@ -139,8 +153,8 @@ export default function Home() {
       {/* Status bar */}
       <div style={{
         padding: '5px 16px',
-        background: '#030306',
-        borderTop: '1px solid #0d0d0d',
+        background: 'transparent',
+        borderTop: '1px solid #1a1a1a',
         display: 'flex',
         alignItems: 'center',
         gap: 8,
