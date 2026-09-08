@@ -92,8 +92,8 @@ export default function Home() {
             id="central-hq"
             style={{
               gridArea: 'hq',
-              width: 'clamp(130px, 13vw, 200px)',
-              height: 'clamp(130px, 13vw, 200px)',
+              width: 'clamp(280px, 32vw, 460px)',
+              height: 'clamp(280px, 32vw, 460px)',
               alignSelf: 'center',
               justifySelf: 'center',
               zIndex: 10,
