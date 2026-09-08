@@ -80,12 +80,28 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
   }, []);
 
   useEffect(() => {
-    // Measure after first paint and on resize
-    const timer = setTimeout(measure, 100);
+    // Multiple measurement passes to catch layout settling + image load
+    const t1 = setTimeout(measure, 100);
+    const t2 = setTimeout(measure, 500);
+    const t3 = setTimeout(measure, 1200);
+
+    // Remeasure when HQ image finishes loading (affects layout)
+    const hqImg = document.querySelector('#central-hq img') as HTMLImageElement | null;
+    if (hqImg && !hqImg.complete) hqImg.addEventListener('load', measure);
+
+    // Remeasure on window load
+    window.addEventListener('load', measure);
+
     const ro = new ResizeObserver(measure);
     const stage = document.getElementById('dungeon-stage');
     if (stage) ro.observe(stage);
-    return () => { clearTimeout(timer); ro.disconnect(); };
+
+    return () => {
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+      ro.disconnect();
+      window.removeEventListener('load', measure);
+      if (hqImg) hqImg.removeEventListener('load', measure);
+    };
   }, [measure]);
 
   if (!svgSize.w || !svgSize.h) return (
@@ -117,17 +133,17 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
           return (
             <g key={c.project}>
               {/* Shadow gutter */}
-              <path d={c.pathD} stroke="#000" strokeWidth="7" fill="none" strokeLinecap="square" opacity="0.8" />
+              <path d={c.pathD} stroke="#000" strokeWidth="10" fill="none" strokeLinecap="square" opacity="0.9" />
 
               {/* Main glowing cable */}
               <path
                 d={c.pathD}
                 stroke={c.color}
-                strokeWidth="2.5"
+                strokeWidth="4"
                 fill="none"
                 strokeLinecap="square"
-                opacity={isActive ? 1 : 0.65}
-                filter={isActive ? `url(#gf-${c.project})` : undefined}
+                opacity={isActive ? 1 : 0.75}
+                filter={`url(#gf-${c.project})`}
                 style={{ transition: 'opacity 0.8s ease' }}
               />
 
@@ -135,10 +151,10 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
               <path
                 d={c.pathD}
                 stroke="#ffffff"
-                strokeWidth="0.6"
+                strokeWidth="1"
                 fill="none"
                 strokeLinecap="square"
-                opacity={isActive ? 0.5 : 0.3}
+                opacity={isActive ? 0.6 : 0.4}
                 style={{ transition: 'opacity 0.8s ease' }}
               />
 
@@ -146,11 +162,11 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
               <path
                 d={c.pathD}
                 stroke={c.color}
-                strokeWidth="2.5"
-                strokeDasharray="4 12"
+                strokeWidth="4"
+                strokeDasharray="5 14"
                 fill="none"
                 strokeLinecap="square"
-                opacity={isActive ? 0.2 : 0.12}
+                opacity={isActive ? 0.25 : 0.15}
                 style={{ transition: 'opacity 0.8s ease' }}
               />
 
