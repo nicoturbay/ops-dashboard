@@ -8,15 +8,13 @@ const PROJECT_COLORS: Record<string, string> = {
   tremendous:     '#FF1493',
 };
 
-// Each cable exits the room's inner corner and connects to the matching
-// corner of HQ — 4 unique corners, so cables never share a path segment.
-// TL room br → HQ tl | TR room bl → HQ tr
-// BL room tr → HQ bl | BR room tl → HQ br
+// Straight diagonal cables from HQ center → each room's inner corner.
+// Feels like spokes radiating from the hub outward.
 const CABLE_CONFIG = [
-  { roomId: 'room-clawckie',   project: 'clawckie',       roomCorner: 'br', hqCorner: 'tl', delay: 0   },
-  { roomId: 'room-coach',      project: 'coach_clawckie', roomCorner: 'bl', hqCorner: 'tr', delay: 0.6 },
-  { roomId: 'room-kince',      project: 'kince',          roomCorner: 'tr', hqCorner: 'bl', delay: 1.2 },
-  { roomId: 'room-tremendous', project: 'tremendous',     roomCorner: 'tl', hqCorner: 'br', delay: 1.8 },
+  { roomId: 'room-clawckie',   project: 'clawckie',       roomCorner: 'br', delay: 0   },
+  { roomId: 'room-coach',      project: 'coach_clawckie', roomCorner: 'bl', delay: 0.6 },
+  { roomId: 'room-kince',      project: 'kince',          roomCorner: 'tr', delay: 1.2 },
+  { roomId: 'room-tremendous', project: 'tremendous',     roomCorner: 'tl', delay: 1.8 },
 ];
 
 interface Pt { x: number; y: number }
@@ -41,10 +39,11 @@ function cornerPt(rect: DOMRect, corner: string, ref: DOMRect): Pt {
   };
 }
 
-// L-shaped: horizontal first, then vertical
-function lPath(start: Pt, end: Pt): { pathD: string; bend: Pt } {
-  const bend: Pt = { x: end.x, y: start.y };
-  return { pathD: `M ${start.x} ${start.y} H ${end.x} V ${end.y}`, bend };
+function centerPt(rect: DOMRect, ref: DOMRect): Pt {
+  return {
+    x: (rect.left + rect.right) / 2 - ref.left,
+    y: (rect.top  + rect.bottom) / 2 - ref.top,
+  };
 }
 
 export default function CableGrid({ activeProjects }: { activeProjects: string[] }) {
@@ -61,15 +60,19 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
     const hr = hqEl.getBoundingClientRect();
     setSvgSize({ w: sr.width, h: sr.height });
 
+    const hqCenter = centerPt(hr, sr);
+
     const result: CableData[] = [];
     for (const cfg of CABLE_CONFIG) {
       const roomEl = document.getElementById(cfg.roomId);
       if (!roomEl) continue;
       const rr = roomEl.getBoundingClientRect();
 
-      const start = cornerPt(rr, cfg.roomCorner, sr);
-      const end   = cornerPt(hr, cfg.hqCorner,   sr);
-      const { pathD, bend } = lPath(start, end);
+      // Cable goes from HQ center → room inner corner (straight diagonal)
+      const start = hqCenter;
+      const end   = cornerPt(rr, cfg.roomCorner, sr);
+      const pathD = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+      const bend  = start; // no bend for straight lines
 
       result.push({
         project: cfg.project,
@@ -114,8 +117,8 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
         >
           <defs>
             {cables.map(c => (
-              <filter key={`gf-${c.project}`} id={`gf-${c.project}`} x="-80%" y="-80%" width="260%" height="260%">
-                <feGaussianBlur stdDeviation="5" result="blur" />
+              <filter key={`gf-${c.project}`} id={`gf-${c.project}`} x="-100%" y="-100%" width="300%" height="300%">
+                <feGaussianBlur stdDeviation="10" result="blur" />
                 <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
             ))}
@@ -125,32 +128,29 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
             const active = activeProjects.includes(c.project);
             return (
               <g key={c.project}>
-                <path d={c.pathD} stroke="#000" strokeWidth="10" fill="none" strokeLinecap="square" opacity="0.85" />
-                <path d={c.pathD} stroke={c.color} strokeWidth="4" fill="none" strokeLinecap="square"
-                  opacity={active ? 1 : 0.7} filter={`url(#gf-${c.project})`}
+                {/* Dark gutter */}
+                <path d={c.pathD} stroke="#000" strokeWidth="16" fill="none" strokeLinecap="round" opacity="0.6" />
+                {/* Main cable with strong glow */}
+                <path d={c.pathD} stroke={c.color} strokeWidth="8" fill="none" strokeLinecap="round"
+                  opacity={active ? 1 : 0.75} filter={`url(#gf-${c.project})`}
                   style={{ transition: 'opacity 0.8s ease' }} />
-                <path d={c.pathD} stroke="#fff" strokeWidth="1" fill="none" strokeLinecap="square"
-                  opacity={active ? 0.6 : 0.35} style={{ transition: 'opacity 0.8s ease' }} />
-                <path d={c.pathD} stroke={c.color} strokeWidth="4" strokeDasharray="5 14" fill="none" strokeLinecap="square"
-                  opacity={active ? 0.25 : 0.15} style={{ transition: 'opacity 0.8s ease' }} />
-
-                {/* Bend dot */}
-                <circle cx={c.bend.x} cy={c.bend.y} r="6" fill={c.color} opacity={active ? 1 : 0.7} filter={`url(#gf-${c.project})`} />
-                <circle cx={c.bend.x} cy={c.bend.y} r="3" fill="#fff" opacity={active ? 0.8 : 0.4} />
-                {/* End dots */}
-                <circle cx={c.start.x} cy={c.start.y} r="4" fill={c.color} opacity={active ? 0.9 : 0.6} />
-                <circle cx={c.end.x}   cy={c.end.y}   r="4" fill={c.color} opacity={active ? 0.9 : 0.6} />
+                {/* Bright inner core */}
+                <path d={c.pathD} stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round"
+                  opacity={active ? 0.7 : 0.4} style={{ transition: 'opacity 0.8s ease' }} />
+                {/* Room endpoint dot */}
+                <circle cx={c.end.x} cy={c.end.y} r="10" fill={c.color} opacity={active ? 1 : 0.75} filter={`url(#gf-${c.project})`} />
+                <circle cx={c.end.x} cy={c.end.y} r="5"  fill="#fff"    opacity={active ? 0.9 : 0.5} />
 
                 {active && [0, 1].map(i => (
                   <g key={i}>
-                    <circle r="5" fill={c.color}>
+                    <circle r="10" fill={c.color} filter={`url(#gf-${c.project})`}>
                       <animateMotion dur="3s" begin={`${c.delay + i * 1.5}s`} repeatCount="indefinite" path={c.pathD} calcMode="linear" />
                       <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.08;0.88;1" dur="3s" begin={`${c.delay + i * 1.5}s`} repeatCount="indefinite" />
-                      <animate attributeName="r" values="3;5;3" dur="3s" begin={`${c.delay + i * 1.5}s`} repeatCount="indefinite" />
+                      <animate attributeName="r" values="7;11;7" dur="3s" begin={`${c.delay + i * 1.5}s`} repeatCount="indefinite" />
                     </circle>
-                    <circle r="2" fill="#fff">
+                    <circle r="4" fill="#fff">
                       <animateMotion dur="3s" begin={`${c.delay + i * 1.5}s`} repeatCount="indefinite" path={c.pathD} calcMode="linear" />
-                      <animate attributeName="opacity" values="0;0.8;0.8;0" keyTimes="0;0.08;0.88;1" dur="3s" begin={`${c.delay + i * 1.5}s`} repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0;0.9;0.9;0" keyTimes="0;0.08;0.88;1" dur="3s" begin={`${c.delay + i * 1.5}s`} repeatCount="indefinite" />
                     </circle>
                   </g>
                 ))}
