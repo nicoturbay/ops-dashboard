@@ -2,13 +2,7 @@
 import { useState } from 'react';
 import { AgentActivity, Project, PROJECT_CONFIG } from '@/types/activity';
 import TerminalPopover from './TerminalPopover';
-
-const ROOM_ICONS: Record<Project, string> = {
-  clawckie: '♟',
-  coach_clawckie: '⚡',
-  kince: '◈',
-  tremendous: '★',
-};
+import PixelRoom from './PixelRoom';
 
 interface ProjectRoomProps {
   project: Project;
@@ -22,26 +16,7 @@ export default function ProjectRoom({ project, activity, recentHistory }: Projec
   const config = PROJECT_CONFIG[project];
   const isActive = activity?.status === 'running';
   const hasFailed = activity?.status === 'failed';
-
   const borderColor = hasFailed ? '#ff4444' : config.color;
-  const glowColor = hasFailed ? 'rgba(255,68,68,0.5)' : config.glowColor;
-
-  // Data bar: max 5 bars for subagent count
-  const subCount = activity?.subagent_count ?? 0;
-  const maxBars = 5;
-  const filledBars = Math.min(subCount, maxBars);
-  const dataBar = '█'.repeat(filledBars) + '░'.repeat(maxBars - filledBars);
-
-  const statusLabel = activity
-    ? activity.status.toUpperCase()
-    : 'IDLE';
-  const statusColor = isActive
-    ? config.color
-    : hasFailed
-    ? '#ff4444'
-    : activity?.status === 'completed'
-    ? '#00CC44'
-    : '#2a2a2a';
 
   return (
     <>
@@ -52,20 +27,19 @@ export default function ProjectRoom({ project, activity, recentHistory }: Projec
         className={isActive ? 'room-active-glow' : ''}
         style={{
           position: 'relative',
-          width: '280px',
-          height: '220px',
-          background: isActive ? '#0a0a12' : '#06060a',
+          width: '100%',
+          height: '100%',
           border: `3px solid ${borderColor}`,
           cursor: 'pointer',
-          transition: 'transform 0.2s ease, opacity 0.2s ease',
-          opacity: isActive ? 1 : hovered ? 0.85 : 0.55,
-          transform: isActive ? 'scale(1.03)' : hovered ? 'scale(1.01)' : 'scale(1)',
+          transition: 'transform 0.2s ease',
+          transform: hovered ? 'scale(1.01)' : 'scale(1)',
           userSelect: 'none',
-          '--room-glow': glowColor,
-          '--room-glow-dim': glowColor.replace('0.5', '0.15').replace('0.6', '0.2'),
+          overflow: 'hidden',
+          '--room-glow': config.glowColor,
+          '--room-glow-dim': config.glowColor.replace('0.6', '0.15'),
         } as React.CSSProperties}
       >
-        {/* Corner brackets — pixel art style, large */}
+        {/* Corner brackets */}
         {[
           { top: -4, left: -4, borderTop: `4px solid ${borderColor}`, borderLeft: `4px solid ${borderColor}` },
           { top: -4, right: -4, borderTop: `4px solid ${borderColor}`, borderRight: `4px solid ${borderColor}` },
@@ -73,123 +47,82 @@ export default function ProjectRoom({ project, activity, recentHistory }: Projec
           { bottom: -4, right: -4, borderBottom: `4px solid ${borderColor}`, borderRight: `4px solid ${borderColor}` },
         ].map((style, i) => (
           <div key={i} style={{
-            position: 'absolute',
-            width: 18, height: 18,
-            filter: `drop-shadow(0 0 4px ${borderColor})`,
+            position: 'absolute', zIndex: 10,
+            width: 20, height: 20,
+            filter: `drop-shadow(0 0 6px ${borderColor})`,
             ...style,
           }} />
         ))}
 
-        {/* Inner glow border */}
-        {isActive && (
-          <div style={{
-            position: 'absolute',
-            inset: 2,
-            border: `1px solid ${glowColor}`,
-            pointerEvents: 'none',
-          }} />
-        )}
+        {/* Pixel room interior */}
+        <PixelRoom project={project} isActive={!!isActive} taskName={activity?.task_name} />
 
-        {/* Room content */}
-        <div style={{ padding: '18px 16px', height: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          
-          {/* Header row: icon + label + status dot */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{
-                fontSize: '18px',
-                filter: isActive ? `drop-shadow(0 0 6px ${borderColor})` : 'none',
-                opacity: isActive ? 1 : 0.4,
-              }}>
-                {ROOM_ICONS[project]}
+        {/* Top overlay bar */}
+        <div style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0,
+          background: 'rgba(0,0,0,0.75)',
+          padding: '4px 8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          zIndex: 5,
+          backdropFilter: 'blur(2px)',
+        }}>
+          <span style={{
+            color: borderColor,
+            fontSize: 8,
+            letterSpacing: '1px',
+            textShadow: isActive ? `0 0 8px ${borderColor}` : 'none',
+            fontFamily: '"Press Start 2P", cursive',
+          }}>
+            {config.label}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {activity?.subagent_count ? (
+              <span style={{ color: borderColor, fontSize: 5, fontFamily: '"Press Start 2P", cursive', opacity: 0.8 }}>
+                {activity.subagent_count}x
               </span>
-              <span style={{
-                color: borderColor,
-                fontSize: '10px',
-                letterSpacing: '1px',
-                textShadow: isActive ? `0 0 10px ${borderColor}, 0 0 20px ${borderColor}` : 'none',
-              }}>
-                {config.label}
-              </span>
-            </div>
-            {/* Status dot */}
+            ) : null}
             <div
               className={isActive ? 'status-pulse' : ''}
               style={{
-                width: 10, height: 10,
-                background: statusColor,
-                boxShadow: isActive ? `0 0 8px ${borderColor}, 0 0 16px ${borderColor}` : 'none',
+                width: 8, height: 8,
+                background: isActive ? borderColor : hasFailed ? '#ff4444' : '#222',
+                boxShadow: isActive ? `0 0 8px ${borderColor}` : 'none',
                 '--pulse-shadow': `0 0 8px ${borderColor}`,
                 '--pulse-shadow-large': `0 0 20px ${borderColor}`,
               } as React.CSSProperties}
             />
           </div>
-
-          {/* Divider */}
-          <div style={{
-            height: '1px',
-            background: `linear-gradient(90deg, ${borderColor}, ${borderColor}44, transparent)`,
-          }} />
-
-          {/* Description */}
-          <div style={{ color: '#444', fontSize: '7px', letterSpacing: '0.5px' }}>
-            {config.description.toUpperCase()}
-          </div>
-
-          {/* Task name */}
-          <div style={{
-            color: isActive ? '#cccccc' : '#2a2a2a',
-            fontSize: '7px',
-            lineHeight: '1.9',
-            minHeight: '28px',
-            wordBreak: 'break-word',
-            overflow: 'hidden',
-          }}>
-            {activity
-              ? `> ${activity.task_name.substring(0, 32)}${activity.task_name.length > 32 ? '...' : ''}`
-              : '> STANDBY'}
-          </div>
-
-          {/* Spacer */}
-          <div style={{ flex: 1 }} />
-
-          {/* Data bar row */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
-              <div style={{ color: '#333', fontSize: '5px', letterSpacing: '0.5px' }}>
-                AGENTS [{subCount}/{maxBars}]
-              </div>
-              <div style={{
-                color: isActive ? borderColor : '#1e1e1e',
-                fontSize: '9px',
-                letterSpacing: '1px',
-                textShadow: isActive ? `0 0 6px ${borderColor}` : 'none',
-              }}>
-                {dataBar}
-              </div>
-            </div>
-            <div style={{
-              color: statusColor,
-              fontSize: '6px',
-              textShadow: isActive ? `0 0 6px ${statusColor}` : 'none',
-              textAlign: 'right',
-            }}>
-              {statusLabel}
-            </div>
-          </div>
-
-          {/* Bottom: click hint */}
-          <div style={{ color: '#1e1e1e', fontSize: '5px', textAlign: 'right' }}>
-            [ENTER TO INSPECT]
-          </div>
         </div>
 
-        {/* Active shimmer overlay */}
-        {isActive && (
+        {/* Bottom overlay bar */}
+        {activity && (
           <div style={{
             position: 'absolute',
-            inset: 0,
-            background: `linear-gradient(135deg, ${glowColor.replace('0.5','0.06').replace('0.6','0.06')}, transparent 60%, ${glowColor.replace('0.5','0.04').replace('0.6','0.04')})`,
+            bottom: 0, left: 0, right: 0,
+            background: 'rgba(0,0,0,0.8)',
+            padding: '4px 8px',
+            zIndex: 5,
+            backdropFilter: 'blur(2px)',
+          }}>
+            <span style={{
+              color: isActive ? '#ccc' : '#444',
+              fontSize: 5,
+              fontFamily: '"Press Start 2P", cursive',
+              letterSpacing: '0.5px',
+            }}>
+              &gt; {activity.task_name.substring(0, 36)}{activity.task_name.length > 36 ? '...' : ''}
+            </span>
+          </div>
+        )}
+
+        {!isActive && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            zIndex: 4,
             pointerEvents: 'none',
           }} />
         )}
