@@ -16,7 +16,7 @@ function Clock() {
     const id = setInterval(update, 1000);
     return () => clearInterval(id);
   }, []);
-  return <span style={{ color: '#333', fontSize: 'var(--fs-xs)', fontVariantNumeric: 'tabular-nums', letterSpacing: '1px', fontFamily: '"Press Start 2P", cursive' }}>{time}</span>;
+  return <span style={{ color: '#333', fontSize: 6, fontVariantNumeric: 'tabular-nums', letterSpacing: '1px', fontFamily: '"Press Start 2P", cursive' }}>{time}</span>;
 }
 
 // Room corner order: tl, tr, bl, br
@@ -30,7 +30,7 @@ const ROOM_LAYOUT: { id: string; project: Project; area: string }[] = [
 export default function Home() {
   const { projectActivity, recentFeed, isLoading, isConnected, isOffline } = useAgentActivity();
   const activeProjects = ROOM_LAYOUT
-    .filter(r => projectActivity[r.project]?.status === 'running')
+    .filter(r => projectActivity[r.project]?.status === 'in_progress')
     .map(r => r.project);
 
   return (
@@ -48,14 +48,14 @@ export default function Home() {
       <CRTOverlay />
 
       {/* Main — 2/6 side panel + 4/6 stage, full height */}
-      <div className="main-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: '2fr 4fr', overflow: 'hidden', minHeight: 0 }}>
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '2fr 4fr', overflow: 'hidden', minHeight: 0 }}>
         <SidePanel activities={recentFeed} />
 
         {/* Right column: header + stage + status */}
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
 
           {/* Header — centered within the 4/6 column */}
-          <header className="mc-header" style={{
+          <header style={{
             padding: '12px 24px 10px',
             borderBottom: '1px solid #111',
             textAlign: 'center',
@@ -63,10 +63,10 @@ export default function Home() {
             background: '#000',
             zIndex: 1,
           }}>
-            <h1 className="mc-title" style={{ fontSize: 'clamp(11px, 1.8vw, 22px)', color: '#fff', letterSpacing: '6px', marginBottom: 4, textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
+            <h1 style={{ fontSize: 'clamp(11px, 1.8vw, 22px)', color: '#fff', letterSpacing: '6px', marginBottom: 4, textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
               MISSION CONTROL
             </h1>
-            <p style={{ color: '#00CC44', fontSize: 'var(--fs-xs)', letterSpacing: '2px', textShadow: '0 0 8px #00CC44' }}>
+            <p style={{ color: '#00CC44', fontSize: 6, letterSpacing: '2px', textShadow: '0 0 8px #00CC44' }}>
               [ REAL-TIME AGENT MONITORING ]
             </p>
           </header>
@@ -81,42 +81,30 @@ export default function Home() {
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
+            display: 'grid',
+            gridTemplateAreas: `
+              "tl . tr"
+              ".  hq ."
+              "bl . br"
+            `,
+            gridTemplateColumns: '1fr auto 1fr',
+            gridTemplateRows: '1fr auto 1fr',
+            padding: '20px',
+            gap: '16px',
             minHeight: 0,
-            display: 'flex',
+            overflow: 'visible',
           }}
         >
-          {/* Grid layout lives on a child, not #dungeon-stage itself — a
-              size container query can't restyle the element that
-              establishes it, only descendants, so the layout that needs
-              to switch at small stage widths has to live one level in. */}
-          <div
-            id="stage-grid"
-            style={{
-              flex: 1,
-              position: 'relative',
-              display: 'grid',
-              gridTemplateAreas: `
-                "tl . tr"
-                ".  hq ."
-                "bl . br"
-              `,
-              gridTemplateColumns: '1fr auto 1fr',
-              gridTemplateRows: '1fr auto 1fr',
-              padding: '20px',
-              gap: '16px',
-              minHeight: 0,
-              overflow: 'visible',
-            }}
-          >
           {/* Cable overlay — covers full stage */}
           <CableGrid activeProjects={activeProjects} />
 
           {/* Central HQ */}
           <div
             id="central-hq"
-            className="hq-slot"
             style={{
               gridArea: 'hq',
+              width: 'clamp(280px, 32vw, 460px)',
+              height: 'clamp(280px, 32vw, 460px)',
               alignSelf: 'center',
               justifySelf: 'center',
               zIndex: 10,
@@ -132,7 +120,6 @@ export default function Home() {
             return (
               <div
                 key={project}
-                className="room-slot-wrapper"
                 style={{
                   gridArea: area,
                   display: 'flex',
@@ -143,7 +130,10 @@ export default function Home() {
               >
                 <div
                   id={id}
-                  className="room-slot"
+                  style={{
+                    width: 'clamp(200px, 26vw, 400px)',
+                    height: 'clamp(160px, 20vw, 310px)',
+                  }}
                 >
                   <ProjectRoom
                     project={project}
@@ -154,7 +144,6 @@ export default function Home() {
               </div>
             );
           })}
-          </div> {/* end stage-grid */}
         </div> {/* end dungeon-stage */}
 
           {/* Status bar */}
@@ -174,7 +163,7 @@ export default function Home() {
               background: isOffline ? '#ff8800' : isConnected ? '#00ff88' : '#ff4444',
               boxShadow: isConnected ? '0 0 6px #00ff88' : 'none',
             }} />
-            <span style={{ color: isOffline ? '#ff8800' : isConnected ? '#00ff88' : '#ff4444', fontSize: 'var(--fs-2xs)', letterSpacing: '1px' }}>
+            <span style={{ color: isOffline ? '#ff8800' : isConnected ? '#00ff88' : '#ff4444', fontSize: 5, letterSpacing: '1px' }}>
               {isOffline ? 'DEMO MODE' : isConnected ? 'LIVE' : 'RECONNECTING'}
             </span>
             <div style={{ flex: 1 }} />
