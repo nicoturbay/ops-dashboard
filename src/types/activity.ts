@@ -28,7 +28,7 @@ export const PROJECT_CONFIG = {
   },
   kince: {
     label: 'KINCE',
-    color: '#B388FF',
+    color: '#4963f5',
     glowColor: 'rgba(179, 136, 255, 0.6)',
     description: 'Workforce Platform',
   },
