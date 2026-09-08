@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 const PROJECT_COLORS: Record<string, string> = {
   clawckie:       '#FF6B00',
   coach_clawckie: '#00CC44',
-  kince:          '#B388FF',
+  kince:          '#4963f5',
   tremendous:     '#FF1493',
 };
 
