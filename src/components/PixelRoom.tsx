@@ -90,7 +90,7 @@ export default function PixelRoom({ project, isActive }: PixelRoomProps) {
           imageRendering: 'pixelated',
           filter: isActive
             ? `brightness(1.05) drop-shadow(0 0 18px ${config.color}88)`
-            : 'brightness(0.85)',
+            : 'none',
           transition: 'filter 0.6s ease',
         }}
       />

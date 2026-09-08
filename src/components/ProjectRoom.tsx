@@ -71,7 +71,7 @@ export default function ProjectRoom({ project, activity, recentHistory }: Projec
         }}>
           <span style={{
             color: borderColor,
-            fontSize: 8,
+            fontSize: 'var(--fs-md)',
             letterSpacing: '1px',
             textShadow: isActive ? `0 0 8px ${borderColor}` : 'none',
             fontFamily: '"Press Start 2P", cursive',
@@ -80,7 +80,7 @@ export default function ProjectRoom({ project, activity, recentHistory }: Projec
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {activity?.subagent_count ? (
-              <span style={{ color: borderColor, fontSize: 5, fontFamily: '"Press Start 2P", cursive', opacity: 0.8 }}>
+              <span style={{ color: borderColor, fontSize: 'var(--fs-2xs)', fontFamily: '"Press Start 2P", cursive', opacity: 0.8 }}>
                 {activity.subagent_count}x
               </span>
             ) : null}
@@ -109,22 +109,13 @@ export default function ProjectRoom({ project, activity, recentHistory }: Projec
           }}>
             <span style={{
               color: isActive ? '#ccc' : '#444',
-              fontSize: 5,
+              fontSize: 'var(--fs-2xs)',
               fontFamily: '"Press Start 2P", cursive',
               letterSpacing: '0.5px',
             }}>
               &gt; {activity.task_name.substring(0, 36)}{activity.task_name.length > 36 ? '...' : ''}
             </span>
           </div>
-        )}
-
-        {!isActive && (
-          <div style={{
-            position: 'absolute', inset: 0,
-            background: 'rgba(0,0,0,0.45)',
-            zIndex: 4,
-            pointerEvents: 'none',
-          }} />
         )}
       </div>
 

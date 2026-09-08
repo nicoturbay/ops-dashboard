@@ -6,6 +6,41 @@
 :root {
   --bg-primary: #050508;
   --scanline-opacity: 0.06;
+
+  /* Type scale — a shared set of pixel-font sizes used across the app.
+     Tuned per breakpoint below so text grows on phones (viewed up close,
+     screen is small) and on large monitors, instead of staying fixed. */
+  --fs-2xs: 5px;
+  --fs-xs: 6px;
+  --fs-sm: 7px;
+  --fs-md: 8px;
+  --fs-lg: 9px;
+  --fs-xl: 11px;
+  --fs-2xl: 22px;
+}
+
+@media (max-width: 480px) {
+  :root {
+    --fs-2xs: 7px;
+    --fs-xs: 8px;
+    --fs-sm: 9px;
+    --fs-md: 10px;
+    --fs-lg: 11px;
+    --fs-xl: 13px;
+    --fs-2xl: 19px;
+  }
+}
+
+@media (min-width: 1600px) {
+  :root {
+    --fs-2xs: 6px;
+    --fs-xs: 7px;
+    --fs-sm: 8px;
+    --fs-md: 9px;
+    --fs-lg: 11px;
+    --fs-xl: 13px;
+    --fs-2xl: 26px;
+  }
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -170,3 +205,92 @@ body { animation: screen-flicker 10s infinite; }
   to { width: var(--bar-width); }
 }
 .data-bar { animation: bar-fill 1.5s ease-out forwards; }
+
+/* ========================================================================
+   Responsive layout
+   ------------------------------------------------------------------------
+   The stage (HQ + 4 rooms) previously sized itself with vw units against
+   the FULL viewport width even though it only occupies 4/6 of a 2fr/4fr
+   grid — so on any narrower viewport the rooms believed they had more
+   room than they actually did, and content clipped off-screen.
+
+   Fix: the stage becomes its own CSS containment context (container-type:
+   inline-size), and HQ/room sizing uses cqw (% of the stage's own box)
+   instead of vw. Below a stage width where the spatial "dungeon map" with
+   cables no longer reads (too cramped for 4 rooms + cables), it collapses
+   into a single scrollable column instead of clipping.
+   ======================================================================== */
+
+#dungeon-stage {
+  container-type: inline-size;
+  container-name: stage;
+}
+
+/* Percentages are sized to fit their own grid track (1fr auto 1fr), not
+   the full container — hq + 2*room must stay well under 100cqw, since the
+   two room columns are `1fr` and get pushed wider than their fair share
+   (min-width:auto) if room-slot ever demands more than that share. */
+.hq-slot {
+  width: clamp(190px, 34cqw, 460px);
+  height: clamp(190px, 34cqw, 460px);
+}
+
+.room-slot {
+  width: clamp(140px, 20cqw, 400px);
+  height: clamp(110px, 16cqw, 310px);
+}
+
+/* Below this stage width, four corner rooms + converging cables no longer
+   have room to read as a spatial map — stack them as a scrollable list. */
+@container stage (max-width: 560px) {
+  /* #dungeon-stage itself is the query container — a size container query
+     can't restyle the element that establishes it, only descendants — so
+     the layout switch targets its child #stage-grid instead. */
+  #stage-grid {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 16px 12px 24px !important;
+    gap: 14px !important;
+  }
+  .cable-grid-overlay {
+    display: none !important;
+  }
+  .room-slot-wrapper {
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+  .hq-slot,
+  .room-slot {
+    width: min(320px, 84cqw) !important;
+    height: auto !important;
+  }
+  .hq-slot { aspect-ratio: 1 / 1; }
+  .room-slot { aspect-ratio: 4 / 3; }
+}
+
+/* Below this viewport width the 2/6 + 4/6 side-by-side split leaves too
+   little room for either pane — stack the task feed above the stage. */
+@media (max-width: 860px) {
+  .main-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+  }
+  .side-panel {
+    border-right: none !important;
+    border-bottom: 2px solid #2c2c38 !important;
+    height: 42vh !important;
+  }
+  .mc-header {
+    padding: 8px 12px 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .mc-title {
+    letter-spacing: 3px !important;
+  }
+}

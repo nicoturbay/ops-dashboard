@@ -9,7 +9,7 @@ export default function CRTOverlay() {
       {/* Vignette */}
       <div style={{
         position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 9998,
-        background: 'radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%)'
+        background: 'radial-gradient(ellipse at center, transparent 72%, rgba(0,0,0,0.35) 100%)'
       }} />
     </>
   );

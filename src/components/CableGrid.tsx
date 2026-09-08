@@ -130,7 +130,7 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
   }, [measure]);
 
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5, overflow: 'visible' }}>
+    <div className="cable-grid-overlay" style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 5, overflow: 'visible' }}>
       {svgSize.w > 0 && (
         <svg
           ref={svgRef}
