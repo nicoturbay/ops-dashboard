@@ -51,7 +51,7 @@ function TerminalLine({ text, delay, color = '#e0e0e0' }: TerminalLineProps) {
       style={{
         color,
         marginBottom: '6px',
-        fontSize: 'var(--fs-md)',
+        fontSize: '8px',
         lineHeight: '1.6',
         wordBreak: 'break-all',
       }}
@@ -124,7 +124,7 @@ export default function TerminalPopover({
           <span
             style={{
               color: config.color,
-              fontSize: 'var(--fs-lg)',
+              fontSize: '9px',
               textShadow: `0 0 8px ${config.color}`,
             }}
           >
@@ -138,7 +138,7 @@ export default function TerminalPopover({
               color: config.color,
               cursor: 'pointer',
               fontFamily: '"Press Start 2P", cursive',
-              fontSize: 'var(--fs-md)',
+              fontSize: '8px',
               padding: '3px 6px',
               transition: 'all 0.1s',
             }}
@@ -181,12 +181,14 @@ export default function TerminalPopover({
                 text={`  STATUS: ${activity.status.toUpperCase()}`}
                 delay={500}
                 color={
-                  activity.status === 'running'
+                  activity.status === 'in_progress'
                     ? '#00ff00'
                     : activity.status === 'completed'
                     ? '#00CC44'
-                    : activity.status === 'failed'
+                    : activity.status === 'could_not_complete'
                     ? '#ff4444'
+                    : activity.status === 'in_queue'
+                    ? '#888888'
                     : '#888'
                 }
               />
@@ -244,7 +246,7 @@ export default function TerminalPopover({
 
           {/* Blinking prompt */}
           <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
-            <span style={{ color: config.color, fontSize: 'var(--fs-md)' }}>
+            <span style={{ color: config.color, fontSize: '8px' }}>
               {config.label.toLowerCase()}@mission-control:~$
             </span>
             <span
