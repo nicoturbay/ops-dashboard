@@ -58,5 +58,3 @@ export const STATUS_COLOR: Record<Status, string> = {
   completed:          '#4488ff',
   could_not_complete: '#ff4444',
 };
-
-// cache-bust
