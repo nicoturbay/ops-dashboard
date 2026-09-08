@@ -51,35 +51,39 @@ export default function PixelRoom({ project, isActive }: PixelRoomProps) {
         }} />
       )}
 
-      {/* Agent illustration — only visible when work is active */}
+      {/* Agent — walks across the room when active */}
       {isActive && (
         <div style={{
           position: 'absolute',
-          bottom: 22,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '18%',
+          bottom: 20,
+          left: 0,
+          width: '100%',
+          height: '22%',
           zIndex: 3,
-          animation: 'agent-bob 2.5s ease-in-out infinite',
-          filter: `drop-shadow(0 0 10px ${config.color}) drop-shadow(0 2px 4px rgba(0,0,0,0.8))`,
+          pointerEvents: 'none',
         }}>
           <img
             src={AGENT_IMAGE[project]}
             alt={`${project} agent`}
             style={{
-              width: '100%',
-              height: 'auto',
+              position: 'absolute',
+              bottom: 0,
+              height: '100%',
+              width: 'auto',
               imageRendering: 'pixelated',
-              display: 'block',
+              animation: 'agent-walk 8s linear infinite',
             }}
           />
         </div>
       )}
 
       <style>{`
-        @keyframes agent-bob {
-          0%, 100% { transform: translateX(-50%) translateY(0px); }
-          50%       { transform: translateX(-50%) translateY(-5px); }
+        @keyframes agent-walk {
+          0%   { left: 10%; transform: scaleX(1); }
+          45%  { left: 75%; transform: scaleX(1); }
+          50%  { left: 75%; transform: scaleX(-1); }
+          95%  { left: 10%; transform: scaleX(-1); }
+          100% { left: 10%; transform: scaleX(1); }
         }
       `}</style>
     </div>
