@@ -29,9 +29,14 @@ const MOCK_ACTIVITY: AgentActivity[] = [
     id: '1',
     project: 'clawckie',
     task_name: 'Daily Briefing',
-    status: 'running',
+    description: 'Fetching calendar and Gmail data',
+    status: 'in_progress',
     subagent_count: 2,
     detail: 'Fetching calendar and Gmail data',
+    discord_server_id: null,
+    discord_channel_id: null,
+    discord_channel_name: null,
+    discord_category_name: null,
     started_at: new Date(Date.now() - 300000).toISOString(),
     completed_at: null,
     created_at: new Date(Date.now() - 300000).toISOString(),
@@ -40,9 +45,14 @@ const MOCK_ACTIVITY: AgentActivity[] = [
     id: '2',
     project: 'kince',
     task_name: 'Worker Matching',
+    description: 'Matched 12 workers to open shifts',
     status: 'completed',
     subagent_count: 0,
     detail: 'Matched 12 workers to open shifts',
+    discord_server_id: null,
+    discord_channel_id: null,
+    discord_channel_name: null,
+    discord_category_name: null,
     started_at: new Date(Date.now() - 600000).toISOString(),
     completed_at: new Date(Date.now() - 120000).toISOString(),
     created_at: new Date(Date.now() - 600000).toISOString(),
@@ -51,20 +61,30 @@ const MOCK_ACTIVITY: AgentActivity[] = [
     id: '3',
     project: 'tremendous',
     task_name: 'Brand Asset Generation',
-    status: 'idle',
+    description: null,
+    status: 'in_queue',
     subagent_count: 0,
     detail: null,
+    discord_server_id: null,
+    discord_channel_id: null,
+    discord_channel_name: null,
+    discord_category_name: null,
     started_at: new Date(Date.now() - 900000).toISOString(),
-    completed_at: new Date(Date.now() - 800000).toISOString(),
+    completed_at: null,
     created_at: new Date(Date.now() - 900000).toISOString(),
   },
   {
     id: '4',
     project: 'coach_clawckie',
     task_name: 'Workout Plan Analysis',
-    status: 'running',
+    description: 'Analyzing nutrition and recovery metrics',
+    status: 'in_progress',
     subagent_count: 1,
     detail: 'Analyzing nutrition and recovery metrics',
+    discord_server_id: null,
+    discord_channel_id: null,
+    discord_channel_name: null,
+    discord_category_name: null,
     started_at: new Date(Date.now() - 120000).toISOString(),
     completed_at: null,
     created_at: new Date(Date.now() - 120000).toISOString(),
@@ -80,10 +100,12 @@ export function useAgentActivity(): UseAgentActivityResult {
 
   const buildProjectMap = useCallback((activities: AgentActivity[]): ProjectActivityMap => {
     const map: ProjectActivityMap = { ...defaultProjectActivity };
-    // For each project, find the most recent running activity, or most recent overall
+    // For each project, prefer in_progress, then in_queue, then most recent
     PROJECTS.forEach((project) => {
       const projectActivities = activities.filter((a) => a.project === project);
-      const running = projectActivities.find((a) => a.status === 'running');
+      const running =
+        projectActivities.find((a) => a.status === 'in_progress') ??
+        projectActivities.find((a) => a.status === 'in_queue');
       map[project] = running ?? (projectActivities[0] ?? null);
     });
     return map;
@@ -161,8 +183,12 @@ export function useAgentActivity(): UseAgentActivityResult {
             const project = newActivity.project;
             const current = prev[project];
 
-            // Update if it's running or if no current activity
-            if (newActivity.status === 'running' || !current) {
+            // Update if it's active (in_progress or in_queue) or if no current activity
+            if (
+              newActivity.status === 'in_progress' ||
+              newActivity.status === 'in_queue' ||
+              !current
+            ) {
               updated[project] = newActivity;
             } else if (current?.id === newActivity.id) {
               updated[project] = newActivity;
