@@ -11,7 +11,7 @@ const ROOM_IMAGE: Record<Project, string> = {
   clawckie: '/rooms/lab.png',
   coach_clawckie: '/rooms/gym.png',
   kince: '/rooms/construction.png',
-  tremendous: '/rooms/office.png',
+  tremendous: '/rooms/tremendous.png',
 };
 
 const AGENT_IMAGE: Record<Project, string> = {
@@ -51,16 +51,17 @@ export default function PixelRoom({ project, isActive }: PixelRoomProps) {
         }} />
       )}
 
-      {/* Agent — walks across the room when active */}
+      {/* Agent — patrols center of room when active */}
       {isActive && (
         <div style={{
           position: 'absolute',
           bottom: 20,
-          left: 0,
-          width: '100%',
+          left: '20%',      /* constrain to middle 60% of room */
+          width: '60%',
           height: '22%',
           zIndex: 3,
           pointerEvents: 'none',
+          overflow: 'visible',
         }}>
           <img
             src={AGENT_IMAGE[project]}
@@ -71,19 +72,19 @@ export default function PixelRoom({ project, isActive }: PixelRoomProps) {
               height: '100%',
               width: 'auto',
               imageRendering: 'pixelated',
-              animation: 'agent-walk 8s linear infinite',
+              animation: 'agent-patrol 7s linear infinite',
             }}
           />
         </div>
       )}
 
       <style>{`
-        @keyframes agent-walk {
-          0%   { left: 10%; transform: scaleX(1); }
-          45%  { left: 75%; transform: scaleX(1); }
-          50%  { left: 75%; transform: scaleX(-1); }
-          95%  { left: 10%; transform: scaleX(-1); }
-          100% { left: 10%; transform: scaleX(1); }
+        @keyframes agent-patrol {
+          0%   { left: 0%;   transform: scaleX(1); }
+          45%  { left: 80%;  transform: scaleX(1); }
+          50%  { left: 80%;  transform: scaleX(-1); }
+          95%  { left: 0%;   transform: scaleX(-1); }
+          100% { left: 0%;   transform: scaleX(1); }
         }
       `}</style>
     </div>
