@@ -55,8 +55,9 @@ export default function PixelRoom({ project, isActive }: PixelRoomProps) {
       {isActive && (
         <div style={{
           position: 'absolute',
-          bottom: 20,
-          left: '20%',      /* constrain to middle 60% of room */
+          top: '50%',
+          transform: 'translateY(-50%)',
+          left: '20%',
           width: '60%',
           height: '22%',
           zIndex: 3,
