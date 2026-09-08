@@ -79,9 +79,9 @@ export default function Home() {
             gridTemplateColumns: '1fr auto 1fr',
             gridTemplateRows: '1fr auto 1fr',
             padding: '20px',
-            gap: '0px',
+            gap: '50px',
             minHeight: 0,
-            overflow: 'hidden',
+            overflow: 'visible',
           }}
         >
           {/* Cable overlay — covers full stage */}
