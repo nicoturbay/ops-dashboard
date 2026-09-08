@@ -57,7 +57,7 @@ export default function PixelRoom({ project, isActive }: PixelRoomProps) {
         bottom: 22,   // above the task bar
         left: '50%',
         transform: 'translateX(-50%)',
-        width: '42%',
+        width: '18%',
         zIndex: 3,
         opacity: isActive ? 1 : 0.2,
         transition: 'opacity 0.6s ease',
