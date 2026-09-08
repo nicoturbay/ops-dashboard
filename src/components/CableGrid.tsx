@@ -8,15 +8,15 @@ const PROJECT_COLORS: Record<string, string> = {
   tremendous:     '#FF1493',
 };
 
-// Each room connects to the nearest face of the HQ.
-// roomFace: which edge of the room the cable exits from ('right'|'left'|'bottom'|'top')
-// hqFace:   which edge of HQ the cable enters  ('left'|'right'|'top'|'bottom')
-// Route: exit room face → travel to HQ face midpoint, L-shaped (H then V or V then H)
+// Each cable exits the room's inner corner and connects to the matching
+// corner of HQ — 4 unique corners, so cables never share a path segment.
+// TL room br → HQ tl | TR room bl → HQ tr
+// BL room tr → HQ bl | BR room tl → HQ br
 const CABLE_CONFIG = [
-  { roomId: 'room-clawckie',   project: 'clawckie',       roomFace: 'right',  hqFace: 'top',    delay: 0   },
-  { roomId: 'room-coach',      project: 'coach_clawckie', roomFace: 'left',   hqFace: 'top',    delay: 0.6 },
-  { roomId: 'room-kince',      project: 'kince',          roomFace: 'right',  hqFace: 'bottom', delay: 1.2 },
-  { roomId: 'room-tremendous', project: 'tremendous',     roomFace: 'left',   hqFace: 'bottom', delay: 1.8 },
+  { roomId: 'room-clawckie',   project: 'clawckie',       roomCorner: 'br', hqCorner: 'tl', delay: 0   },
+  { roomId: 'room-coach',      project: 'coach_clawckie', roomCorner: 'bl', hqCorner: 'tr', delay: 0.6 },
+  { roomId: 'room-kince',      project: 'kince',          roomCorner: 'tr', hqCorner: 'bl', delay: 1.2 },
+  { roomId: 'room-tremendous', project: 'tremendous',     roomCorner: 'tl', hqCorner: 'br', delay: 1.8 },
 ];
 
 interface Pt { x: number; y: number }
@@ -30,23 +30,18 @@ interface CableData {
   delay: number;
 }
 
-function faceMidpoint(rect: DOMRect, face: string, ref: DOMRect): Pt {
+function cornerPt(rect: DOMRect, corner: string, ref: DOMRect): Pt {
   const l = rect.left - ref.left;
   const r = rect.right - ref.left;
   const t = rect.top - ref.top;
   const b = rect.bottom - ref.top;
-  const mx = (l + r) / 2;
-  const my = (t + b) / 2;
-  switch (face) {
-    case 'right':  return { x: r,  y: my };
-    case 'left':   return { x: l,  y: my };
-    case 'top':    return { x: mx, y: t  };
-    case 'bottom': return { x: mx, y: b  };
-    default:       return { x: mx, y: my };
-  }
+  return {
+    x: corner.endsWith('l') ? l : r,
+    y: corner.startsWith('t') ? t : b,
+  };
 }
 
-// Build an L-shaped path: horizontal first, then vertical
+// L-shaped: horizontal first, then vertical
 function lPath(start: Pt, end: Pt): { pathD: string; bend: Pt } {
   const bend: Pt = { x: end.x, y: start.y };
   return { pathD: `M ${start.x} ${start.y} H ${end.x} V ${end.y}`, bend };
@@ -72,11 +67,16 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
       if (!roomEl) continue;
       const rr = roomEl.getBoundingClientRect();
 
-      const start = faceMidpoint(rr, cfg.roomFace, sr);
-      const end   = faceMidpoint(hr, cfg.hqFace, sr);
+      const start = cornerPt(rr, cfg.roomCorner, sr);
+      const end   = cornerPt(hr, cfg.hqCorner,   sr);
       const { pathD, bend } = lPath(start, end);
 
-      result.push({ project: cfg.project, color: PROJECT_COLORS[cfg.project], pathD, bend, start, end, delay: cfg.delay });
+      result.push({
+        project: cfg.project,
+        color: PROJECT_COLORS[cfg.project],
+        pathD, bend, start, end,
+        delay: cfg.delay,
+      });
     }
     setCables(result);
   }, []);
@@ -125,40 +125,22 @@ export default function CableGrid({ activeProjects }: { activeProjects: string[]
             const active = activeProjects.includes(c.project);
             return (
               <g key={c.project}>
-                {/* Dark gutter underneath */}
                 <path d={c.pathD} stroke="#000" strokeWidth="10" fill="none" strokeLinecap="square" opacity="0.85" />
-
-                {/* Main colored cable */}
-                <path
-                  d={c.pathD} stroke={c.color} strokeWidth="4" fill="none" strokeLinecap="square"
-                  opacity={active ? 1 : 0.7}
-                  filter={`url(#gf-${c.project})`}
-                  style={{ transition: 'opacity 0.8s ease' }}
-                />
-
-                {/* Bright inner highlight */}
-                <path
-                  d={c.pathD} stroke="#fff" strokeWidth="1" fill="none" strokeLinecap="square"
-                  opacity={active ? 0.6 : 0.35}
-                  style={{ transition: 'opacity 0.8s ease' }}
-                />
-
-                {/* Circuit dash marks */}
-                <path
-                  d={c.pathD} stroke={c.color} strokeWidth="4" strokeDasharray="5 14" fill="none" strokeLinecap="square"
-                  opacity={active ? 0.25 : 0.15}
-                  style={{ transition: 'opacity 0.8s ease' }}
-                />
+                <path d={c.pathD} stroke={c.color} strokeWidth="4" fill="none" strokeLinecap="square"
+                  opacity={active ? 1 : 0.7} filter={`url(#gf-${c.project})`}
+                  style={{ transition: 'opacity 0.8s ease' }} />
+                <path d={c.pathD} stroke="#fff" strokeWidth="1" fill="none" strokeLinecap="square"
+                  opacity={active ? 0.6 : 0.35} style={{ transition: 'opacity 0.8s ease' }} />
+                <path d={c.pathD} stroke={c.color} strokeWidth="4" strokeDasharray="5 14" fill="none" strokeLinecap="square"
+                  opacity={active ? 0.25 : 0.15} style={{ transition: 'opacity 0.8s ease' }} />
 
                 {/* Bend dot */}
                 <circle cx={c.bend.x} cy={c.bend.y} r="6" fill={c.color} opacity={active ? 1 : 0.7} filter={`url(#gf-${c.project})`} />
                 <circle cx={c.bend.x} cy={c.bend.y} r="3" fill="#fff" opacity={active ? 0.8 : 0.4} />
-
                 {/* End dots */}
                 <circle cx={c.start.x} cy={c.start.y} r="4" fill={c.color} opacity={active ? 0.9 : 0.6} />
                 <circle cx={c.end.x}   cy={c.end.y}   r="4" fill={c.color} opacity={active ? 0.9 : 0.6} />
 
-                {/* Pulse dots when active */}
                 {active && [0, 1].map(i => (
                   <g key={i}>
                     <circle r="5" fill={c.color}>
