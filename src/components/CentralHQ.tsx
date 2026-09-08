@@ -13,20 +13,7 @@ export default function CentralHQ() {
       alignItems: 'center',
       justifyContent: 'center',
     }}>
-      <style>{`
-        @keyframes hq-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
-        @keyframes hq-glow  { 0%,100%{opacity:0.5} 50%{opacity:1} }
-      `}</style>
 
-      {/* Glow behind */}
-      <div style={{
-        position: 'absolute',
-        inset: '-15%',
-        background: 'radial-gradient(circle, rgba(255,107,0,0.25) 0%, transparent 65%)',
-        animation: 'hq-glow 3.5s ease-in-out infinite',
-        pointerEvents: 'none',
-        borderRadius: '50%',
-      }} />
 
       {err ? (
         <div style={{
@@ -56,8 +43,6 @@ export default function CentralHQ() {
             height: '100%',
             objectFit: 'contain',
             imageRendering: 'pixelated',
-            filter: 'drop-shadow(0 0 16px rgba(255,107,0,0.7)) drop-shadow(0 0 4px rgba(255,107,0,1))',
-            animation: 'hq-float 4s ease-in-out infinite',
           }}
         />
       )}
