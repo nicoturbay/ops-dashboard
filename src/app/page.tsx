@@ -47,31 +47,35 @@ export default function Home() {
 
       <CRTOverlay />
 
-      {/* Header */}
-      <header style={{
-        padding: '12px 24px 10px',
-        borderBottom: '1px solid #111',
-        textAlign: 'center',
-        flexShrink: 0,
-        background: '#000',
-        zIndex: 1,
-      }}>
-        <h1 style={{ fontSize: 'clamp(11px, 1.8vw, 22px)', color: '#fff', letterSpacing: '6px', marginBottom: 4, textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
-          MISSION CONTROL
-        </h1>
-        <p style={{ color: '#00CC44', fontSize: 6, letterSpacing: '2px', textShadow: '0 0 8px #00CC44' }}>
-          [ REAL-TIME AGENT MONITORING ]
-        </p>
-      </header>
-
-      {/* Main */}
+      {/* Main — 2/6 side panel + 4/6 stage, full height */}
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '2fr 4fr', overflow: 'hidden', minHeight: 0 }}>
         <SidePanel activities={recentFeed} />
+
+        {/* Right column: header + stage + status */}
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+
+          {/* Header — centered within the 4/6 column */}
+          <header style={{
+            padding: '12px 24px 10px',
+            borderBottom: '1px solid #111',
+            textAlign: 'center',
+            flexShrink: 0,
+            background: '#000',
+            zIndex: 1,
+          }}>
+            <h1 style={{ fontSize: 'clamp(11px, 1.8vw, 22px)', color: '#fff', letterSpacing: '6px', marginBottom: 4, textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
+              MISSION CONTROL
+            </h1>
+            <p style={{ color: '#00CC44', fontSize: 6, letterSpacing: '2px', textShadow: '0 0 8px #00CC44' }}>
+              [ REAL-TIME AGENT MONITORING ]
+            </p>
+          </header>
 
         {/* Stage — background image lives here only */}
         <div
           id="dungeon-stage"
           style={{
+            flex: 1,
             position: 'relative',
             backgroundImage: 'url(/bg.png)',
             backgroundSize: 'cover',
@@ -140,32 +144,34 @@ export default function Home() {
               </div>
             );
           })}
-        </div>
-      </div>
+        </div> {/* end dungeon-stage */}
 
-      {/* Status bar */}
-      <div style={{
-        padding: '5px 16px',
-        background: '#000',
-        borderTop: '1px solid #1a1a1a',
-        zIndex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        flexShrink: 0,
-      }}>
-        <div style={{
-          width: 6, height: 6,
-          borderRadius: '50%',
-          background: isOffline ? '#ff8800' : isConnected ? '#00ff88' : '#ff4444',
-          boxShadow: isConnected ? '0 0 6px #00ff88' : 'none',
-        }} />
-        <span style={{ color: isOffline ? '#ff8800' : isConnected ? '#00ff88' : '#ff4444', fontSize: 5, letterSpacing: '1px' }}>
-          {isOffline ? 'DEMO MODE' : isConnected ? 'LIVE' : 'RECONNECTING'}
-        </span>
-        <div style={{ flex: 1 }} />
-        <Clock />
-      </div>
+          {/* Status bar */}
+          <div style={{
+            padding: '5px 16px',
+            background: '#000',
+            borderTop: '1px solid #1a1a1a',
+            zIndex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexShrink: 0,
+          }}>
+            <div style={{
+              width: 6, height: 6,
+              borderRadius: '50%',
+              background: isOffline ? '#ff8800' : isConnected ? '#00ff88' : '#ff4444',
+              boxShadow: isConnected ? '0 0 6px #00ff88' : 'none',
+            }} />
+            <span style={{ color: isOffline ? '#ff8800' : isConnected ? '#00ff88' : '#ff4444', fontSize: 5, letterSpacing: '1px' }}>
+              {isOffline ? 'DEMO MODE' : isConnected ? 'LIVE' : 'RECONNECTING'}
+            </span>
+            <div style={{ flex: 1 }} />
+            <Clock />
+          </div>
+
+        </div> {/* end right column */}
+      </div> {/* end main grid */}
     </div>
   );
 }
