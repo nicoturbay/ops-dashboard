@@ -80,7 +80,7 @@ export default function SidePanel({ activities }: SidePanelProps) {
     <div style={{
       width: 340,
       flexShrink: 0,
-      background: '#07070f',
+      background: 'transparent',
       borderRight: '1px solid #2a2a2a',
       display: 'flex',
       flexDirection: 'column',
@@ -165,7 +165,7 @@ export default function SidePanel({ activities }: SidePanelProps) {
                   borderLeft: `3px solid ${cfg.color}`,
                   marginLeft: 10,
                   marginBottom: 4,
-                  background: '#08080e',
+                  background: 'transparent',
                 }}>
                   <div style={{ color: cfg.color, fontSize: 7, letterSpacing: '0.5px', marginBottom: 5, textShadow: `0 0 8px ${cfg.color}` }}>
                     {cfg.label}
