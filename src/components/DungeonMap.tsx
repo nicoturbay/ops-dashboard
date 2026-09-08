@@ -7,25 +7,35 @@ interface DungeonMapProps {
   recentFeed: AgentActivity[];
 }
 
+const PROJECTS: Project[] = ['clawckie', 'coach_clawckie', 'kince', 'tremendous'];
+
 export default function DungeonMap({ projectActivity, recentFeed }: DungeonMapProps) {
   return (
     <div style={{
       flex: 1,
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gridTemplateRows: '1fr 1fr',
-      gap: 8,
-      padding: 16,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 24,
       minHeight: 0,
+      overflow: 'hidden',
     }}>
-      {(['clawckie', 'coach_clawckie', 'kince', 'tremendous'] as Project[]).map(project => (
-        <ProjectRoom
-          key={project}
-          project={project}
-          activity={projectActivity[project]}
-          recentHistory={recentFeed}
-        />
-      ))}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, 280px)',
+        gridTemplateRows: 'repeat(2, 220px)',
+        gap: 12,
+      }}>
+        {PROJECTS.map(project => (
+          <div key={project} style={{ width: 280, height: 220 }}>
+            <ProjectRoom
+              project={project}
+              activity={projectActivity[project]}
+              recentHistory={recentFeed}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
