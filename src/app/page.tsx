@@ -6,7 +6,7 @@ import SidePanel from '@/components/SidePanel';
 import CRTOverlay from '@/components/CRTOverlay';
 import CentralHQ from '@/components/CentralHQ';
 import CableGrid from '@/components/CableGrid';
-import { Project, PROJECT_CONFIG } from '@/types/activity';
+import { Project } from '@/types/activity';
 
 function Clock() {
   const [time, setTime] = useState('');
@@ -19,15 +19,19 @@ function Clock() {
   return <span style={{ color: '#333', fontSize: 6, fontVariantNumeric: 'tabular-nums', letterSpacing: '1px', fontFamily: '"Press Start 2P", cursive' }}>{time}</span>;
 }
 
-const ROOM_ORDER: Project[] = ['clawckie', 'coach_clawckie', 'kince', 'tremendous'];
+// Room corner order: tl, tr, bl, br
+const ROOM_LAYOUT: { id: string; project: Project; area: string }[] = [
+  { id: 'room-clawckie',       project: 'clawckie',       area: 'tl' },
+  { id: 'room-coach',          project: 'coach_clawckie', area: 'tr' },
+  { id: 'room-kince',          project: 'kince',           area: 'bl' },
+  { id: 'room-tremendous',     project: 'tremendous',      area: 'br' },
+];
 
 export default function Home() {
   const { projectActivity, recentFeed, isLoading, isConnected, isOffline } = useAgentActivity();
-
-  const activeProjects = ROOM_ORDER.filter(p => projectActivity[p]?.status === 'running');
-
-  // Suppress unused variable warning — PROJECT_CONFIG imported for type safety
-  void PROJECT_CONFIG;
+  const activeProjects = ROOM_LAYOUT
+    .filter(r => projectActivity[r.project]?.status === 'running')
+    .map(r => r.project);
 
   return (
     <div style={{
@@ -36,7 +40,6 @@ export default function Home() {
       display: 'flex',
       flexDirection: 'column',
       fontFamily: '"Press Start 2P", cursive',
-      position: 'relative',
       overflow: 'hidden',
     }}>
       <CRTOverlay />
@@ -48,14 +51,8 @@ export default function Home() {
         textAlign: 'center',
         flexShrink: 0,
         background: 'linear-gradient(180deg, #08080e, #050508)',
-        position: 'relative',
       }}>
-        <div style={{
-          position: 'absolute', bottom: 0, left: '5%', right: '5%',
-          height: 1,
-          background: 'linear-gradient(90deg, transparent, #ffffff22, transparent)',
-        }} />
-        <h1 style={{ fontSize: 'clamp(12px, 2vw, 24px)', color: '#fff', letterSpacing: '5px', marginBottom: 4, textShadow: '0 0 20px #ffffff44' }}>
+        <h1 style={{ fontSize: 'clamp(11px, 1.8vw, 22px)', color: '#fff', letterSpacing: '6px', marginBottom: 4, textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
           MISSION CONTROL
         </h1>
         <p style={{ color: '#00CC44', fontSize: 6, letterSpacing: '2px', textShadow: '0 0 8px #00CC44' }}>
@@ -63,74 +60,85 @@ export default function Home() {
         </p>
       </header>
 
-      {/* Main area */}
+      {/* Main */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
         <SidePanel activities={recentFeed} />
 
-        {/* Center stage — radial dungeon layout */}
-        <div style={{
-          flex: 1,
-          position: 'relative',
-          display: 'grid',
-          gridTemplateAreas: `
-            "tl . tr"
-            ". hq ."
-            "bl . br"
-          `,
-          gridTemplateColumns: '1fr auto 1fr',
-          gridTemplateRows: '1fr auto 1fr',
-          gap: 0,
-          padding: '16px',
-          minHeight: 0,
-          overflow: 'hidden',
-        }}>
-          {/* SVG cables overlay */}
+        {/* Stage */}
+        <div
+          id="dungeon-stage"
+          style={{
+            flex: 1,
+            position: 'relative',
+            display: 'grid',
+            gridTemplateAreas: `
+              "tl . tr"
+              ".  hq ."
+              "bl . br"
+            `,
+            gridTemplateColumns: '1fr auto 1fr',
+            gridTemplateRows: '1fr auto 1fr',
+            padding: '20px',
+            gap: '0px',
+            minHeight: 0,
+            overflow: 'hidden',
+          }}
+        >
+          {/* Cable overlay — covers full stage */}
           <CableGrid activeProjects={activeProjects} />
 
           {/* Central HQ */}
-          <div style={{
-            gridArea: 'hq',
-            width: 'clamp(140px, 16vw, 240px)',
-            height: 'clamp(140px, 16vw, 240px)',
-            alignSelf: 'center',
-            justifySelf: 'center',
-            zIndex: 10,
-          }}>
+          <div
+            id="central-hq"
+            style={{
+              gridArea: 'hq',
+              width: 'clamp(130px, 13vw, 200px)',
+              height: 'clamp(130px, 13vw, 200px)',
+              alignSelf: 'center',
+              justifySelf: 'center',
+              zIndex: 10,
+            }}
+          >
             <CentralHQ />
           </div>
 
-          {/* 4 Dungeon rooms */}
-          {[
-            { area: 'tl', project: 'clawckie' as Project },
-            { area: 'tr', project: 'coach_clawckie' as Project },
-            { area: 'bl', project: 'kince' as Project },
-            { area: 'br', project: 'tremendous' as Project },
-          ].map(({ area, project }) => (
-            <div key={project} style={{
-              gridArea: area,
-              padding: '8px',
-              display: 'flex',
-              alignItems: area.startsWith('t') ? 'flex-end' : 'flex-start',
-              justifyContent: area.endsWith('l') ? 'flex-end' : 'flex-start',
-            }}>
-              <div style={{
-                width: 'clamp(180px, 22vw, 340px)',
-                height: 'clamp(140px, 17vw, 270px)',
-              }}>
-                <ProjectRoom
-                  project={project}
-                  activity={projectActivity[project]}
-                  recentHistory={recentFeed}
-                />
+          {/* Four rooms */}
+          {ROOM_LAYOUT.map(({ id, project, area }) => {
+            const isLeft = area.endsWith('l');
+            const isTop = area.startsWith('t');
+            return (
+              <div
+                key={project}
+                style={{
+                  gridArea: area,
+                  display: 'flex',
+                  alignItems: isTop ? 'flex-end' : 'flex-start',
+                  justifyContent: isLeft ? 'flex-end' : 'flex-start',
+                  padding: '0px',
+                }}
+              >
+                <div
+                  id={id}
+                  style={{
+                    width: 'clamp(200px, 26vw, 400px)',
+                    height: 'clamp(160px, 20vw, 310px)',
+                  }}
+                >
+                  <ProjectRoom
+                    project={project}
+                    activity={projectActivity[project]}
+                    recentHistory={recentFeed}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       {/* Status bar */}
       <div style={{
-        padding: '6px 16px',
+        padding: '5px 16px',
         background: '#030306',
         borderTop: '1px solid #0d0d0d',
         display: 'flex',
@@ -140,10 +148,11 @@ export default function Home() {
       }}>
         <div style={{
           width: 6, height: 6,
+          borderRadius: '50%',
           background: isOffline ? '#ff8800' : isConnected ? '#00ff88' : '#ff4444',
           boxShadow: isConnected ? '0 0 6px #00ff88' : 'none',
         }} />
-        <span style={{ color: isOffline ? '#ff8800' : isConnected ? '#00ff88' : '#ff4444', fontSize: 5, letterSpacing: '0.5px' }}>
+        <span style={{ color: isOffline ? '#ff8800' : isConnected ? '#00ff88' : '#ff4444', fontSize: 5, letterSpacing: '1px' }}>
           {isOffline ? 'DEMO MODE' : isConnected ? 'LIVE' : 'RECONNECTING'}
         </span>
         <div style={{ flex: 1 }} />
