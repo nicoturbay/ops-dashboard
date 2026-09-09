@@ -51,7 +51,7 @@ function TerminalLine({ text, delay, color = '#e0e0e0' }: TerminalLineProps) {
       style={{
         color,
         marginBottom: '6px',
-        fontSize: '8px',
+        fontSize: 'var(--fs-md)',
         lineHeight: '1.6',
         wordBreak: 'break-all',
       }}
@@ -124,7 +124,7 @@ export default function TerminalPopover({
           <span
             style={{
               color: config.color,
-              fontSize: '9px',
+              fontSize: 'var(--fs-lg)',
               textShadow: `0 0 8px ${config.color}`,
             }}
           >
@@ -138,7 +138,7 @@ export default function TerminalPopover({
               color: config.color,
               cursor: 'pointer',
               fontFamily: '"Press Start 2P", cursive',
-              fontSize: '8px',
+              fontSize: 'var(--fs-md)',
               padding: '3px 6px',
               transition: 'all 0.1s',
             }}
@@ -246,7 +246,7 @@ export default function TerminalPopover({
 
           {/* Blinking prompt */}
           <div style={{ display: 'flex', alignItems: 'center', marginTop: '8px' }}>
-            <span style={{ color: config.color, fontSize: '8px' }}>
+            <span style={{ color: config.color, fontSize: 'var(--fs-md)' }}>
               {config.label.toLowerCase()}@mission-control:~$
             </span>
             <span

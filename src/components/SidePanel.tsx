@@ -30,9 +30,9 @@ export default function SidePanel({ activities }: SidePanelProps) {
   }
 
   return (
-    <div style={{
+    <div className="side-panel" style={{
       background: '#000',
-      borderRight: '2px solid #222',
+      borderRight: '2px solid #2c2c38',
       display: 'flex',
       flexDirection: 'column',
       fontFamily: '"Press Start 2P", cursive',
@@ -43,10 +43,10 @@ export default function SidePanel({ activities }: SidePanelProps) {
       {/* Header */}
       <div style={{
         padding: '18px 16px 14px',
-        borderBottom: '1px solid #333',
+        borderBottom: '1px solid #3a3a48',
         flexShrink: 0,
       }}>
-        <span style={{ color: '#ffffff', fontSize: 11, letterSpacing: '2px' }}>TASK FEED</span>
+        <span style={{ color: '#ffffff', fontSize: 'var(--fs-xl)', letterSpacing: '2px' }}>TASK FEED</span>
       </div>
 
       {/* Filter tabs */}
@@ -55,7 +55,7 @@ export default function SidePanel({ activities }: SidePanelProps) {
         display: 'flex',
         flexWrap: 'wrap',
         gap: 6,
-        borderBottom: '1px solid #333',
+        borderBottom: '1px solid #3a3a48',
         flexShrink: 0,
       }}>
         {(['all', ...PROJECT_KEYS] as FilterProject[]).map(p => {
@@ -64,10 +64,10 @@ export default function SidePanel({ activities }: SidePanelProps) {
           const isSel = filter === p;
           return (
             <button key={p} onClick={() => setFilter(p)} style={{
-              background: isSel ? (cfg?.color ?? '#fff') : '#111',
-              border: `1px solid ${isSel ? (cfg?.color ?? '#fff') : '#555'}`,
-              color: isSel ? '#000' : (cfg?.color ?? '#fff'),
-              fontSize: 7,
+              background: isSel ? (cfg?.textColor ?? '#fff') : '#17171f',
+              border: `1px solid ${isSel ? (cfg?.textColor ?? '#fff') : '#6a6a7a'}`,
+              color: isSel ? '#000' : (cfg?.textColor ?? '#fff'),
+              fontSize: 'var(--fs-sm)',
               fontFamily: '"Press Start 2P", cursive',
               padding: '5px 8px',
               cursor: 'pointer',
@@ -81,14 +81,14 @@ export default function SidePanel({ activities }: SidePanelProps) {
       </div>
 
       {/* Task list */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
+      <div className="task-list" style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
 
         {/* ACTIVE (in_progress + in_queue) */}
         {active.length > 0 && (
           <div style={{ marginBottom: 24 }}>
             <div style={{ padding: '4px 16px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#00ff88', boxShadow: '0 0 6px #00ff88' }} />
-              <span style={{ color: '#00ff88', fontSize: 8, letterSpacing: '1px' }}>ACTIVE</span>
+              <span style={{ color: '#00ff88', fontSize: 'var(--fs-md)', letterSpacing: '1px' }}>ACTIVE</span>
             </div>
             {active.map(task => {
               const cfg = PROJECT_CONFIG[task.project];
@@ -100,12 +100,12 @@ export default function SidePanel({ activities }: SidePanelProps) {
                   marginLeft: 12,
                   marginBottom: 6,
                   borderLeft: `3px solid ${cfg.color}`,
-                  background: '#0d0d0d',
+                  background: '#15151d',
                 }}>
-                  <div style={{ color: cfg.color, fontSize: 8, marginBottom: 6, textShadow: `0 0 8px ${cfg.color}`, letterSpacing: '0.5px' }}>
+                  <div style={{ color: cfg.textColor, fontSize: 'var(--fs-md)', marginBottom: 6, textShadow: `0 0 8px ${cfg.color}`, letterSpacing: '0.5px' }}>
                     {cfg.label}
                   </div>
-                  <div style={{ color: '#ffffff', fontSize: 7, lineHeight: 1.9, wordBreak: 'break-word' }}>
+                  <div style={{ color: '#ffffff', fontSize: 'var(--fs-sm)', lineHeight: 1.9, wordBreak: 'break-word' }}>
                     {task.task_name.substring(0, 38)}{task.task_name.length > 38 ? '…' : ''}
                   </div>
                   {/* Status badge */}
@@ -116,18 +116,18 @@ export default function SidePanel({ activities }: SidePanelProps) {
                     background: `${statusColor}22`,
                     border: `1px solid ${statusColor}`,
                     color: statusColor,
-                    fontSize: 5,
+                    fontSize: 'var(--fs-2xs)',
                     letterSpacing: '0.5px',
                   }}>
                     {statusLabel}
                   </div>
                   {/* Channel name */}
                   {task.discord_channel_name && (
-                    <div style={{ color: '#555', fontSize: 5, marginTop: 4, letterSpacing: '0.3px' }}>
+                    <div style={{ color: '#8a8a98', fontSize: 'var(--fs-2xs)', marginTop: 4, letterSpacing: '0.3px' }}>
                       {task.discord_channel_name}
                     </div>
                   )}
-                  <div style={{ color: '#aaaaaa', fontSize: 6, marginTop: 6, display: 'flex', justifyContent: 'space-between' }}>
+                  <div style={{ color: '#c6c6d2', fontSize: 'var(--fs-xs)', marginTop: 6, display: 'flex', justifyContent: 'space-between' }}>
                     <span>{task.subagent_count > 0 ? `${task.subagent_count} agents` : '1 agent'}</span>
                     <span>{formatElapsed(task.started_at)}</span>
                   </div>
@@ -141,7 +141,7 @@ export default function SidePanel({ activities }: SidePanelProps) {
         {completed.length > 0 && (
           <div>
             <div style={{ padding: '4px 16px 10px' }}>
-              <span style={{ color: '#aaaaaa', fontSize: 8, letterSpacing: '1px' }}>COMPLETED</span>
+              <span style={{ color: '#c6c6d2', fontSize: 'var(--fs-md)', letterSpacing: '1px' }}>COMPLETED</span>
             </div>
             {completed.map((task, i) => {
               const cfg      = PROJECT_CONFIG[task.project];
@@ -153,11 +153,11 @@ export default function SidePanel({ activities }: SidePanelProps) {
                   padding: '8px 16px',
                   marginLeft: 12,
                   marginBottom: 5,
-                  borderLeft: `2px solid ${failed ? '#ff4444' : '#444'}`,
-                  opacity: Math.max(0.6, 1 - i * 0.05),
+                  borderLeft: `2px solid ${failed ? '#ff4444' : '#5a5a68'}`,
+                  opacity: Math.max(0.85, 1 - i * 0.03),
                 }}>
-                  <div style={{ color: '#dddddd', fontSize: 7, marginBottom: 4 }}>
-                    <span style={{ color: cfg.color }}>{cfg.label.substring(0, 5)}</span>
+                  <div style={{ color: '#e6e6ee', fontSize: 'var(--fs-sm)', marginBottom: 4 }}>
+                    <span style={{ color: cfg.textColor }}>{cfg.label.substring(0, 5)}</span>
                     {'  '}{task.task_name.substring(0, 28)}{task.task_name.length > 28 ? '…' : ''}
                   </div>
                   <div style={{
@@ -173,12 +173,12 @@ export default function SidePanel({ activities }: SidePanelProps) {
                       background: `${sColor}22`,
                       border: `1px solid ${sColor}`,
                       color: sColor,
-                      fontSize: 5,
+                      fontSize: 'var(--fs-2xs)',
                       letterSpacing: '0.3px',
                     }}>
                       {sLabel}
                     </span>
-                    <span style={{ color: '#888888', fontSize: 6 }}>
+                    <span style={{ color: '#b4b4c2', fontSize: 'var(--fs-xs)' }}>
                       {task.completed_at ? formatTime(task.completed_at) : ''}
                     </span>
                   </div>
@@ -189,7 +189,7 @@ export default function SidePanel({ activities }: SidePanelProps) {
         )}
 
         {filtered.length === 0 && (
-          <div style={{ color: '#888888', fontSize: 7, padding: '24px 16px', lineHeight: 2.2 }}>
+          <div style={{ color: '#b4b4c2', fontSize: 'var(--fs-sm)', padding: '24px 16px', lineHeight: 2.2 }}>
             NO TASKS YET.<br />STANDING BY.
           </div>
         )}

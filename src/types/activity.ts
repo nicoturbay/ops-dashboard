@@ -23,24 +23,28 @@ export const PROJECT_CONFIG = {
     label: 'CLAWCKIE',
     color: '#FF6B00',
     glowColor: 'rgba(255, 107, 0, 0.6)',
+    textColor: '#FF8A3D',
     description: 'Chief of Staff',
   },
   coach_clawckie: {
     label: 'COACH CLAWCKIE',
     color: '#00CC44',
     glowColor: 'rgba(0, 204, 68, 0.6)',
+    textColor: '#33E06E',
     description: 'Fitness Intelligence',
   },
   kince: {
     label: 'KINCE',
     color: '#4963f5',
     glowColor: 'rgba(73, 99, 245, 0.6)',
+    textColor: '#8CA4FF',
     description: 'Workforce Platform',
   },
   tremendous: {
     label: 'TREMENDOUS',
     color: '#FF1493',
     glowColor: 'rgba(255, 20, 147, 0.6)',
+    textColor: '#FF5FB4',
     description: 'Brand Studio',
   },
 } as const;
@@ -53,7 +57,7 @@ export const STATUS_LABEL: Record<Status, string> = {
 };
 
 export const STATUS_COLOR: Record<Status, string> = {
-  in_queue:           '#888888',
+  in_queue:           '#a0a0ae',
   in_progress:        '#00ff88',
   completed:          '#4488ff',
   could_not_complete: '#ff4444',
