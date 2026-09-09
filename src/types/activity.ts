@@ -26,7 +26,7 @@ export const PROJECT_CONFIG = {
     description: 'Chief of Staff',
   },
   coach_clawckie: {
-    label: 'COACH',
+    label: 'COACH CLAWCKIE',
     color: '#00CC44',
     glowColor: 'rgba(0, 204, 68, 0.6)',
     description: 'Fitness Intelligence',
