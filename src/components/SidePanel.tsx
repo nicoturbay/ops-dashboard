@@ -23,6 +23,10 @@ export default function SidePanel({ activities }: SidePanelProps) {
   const completed = byProject.filter(a => a.status === 'completed' || a.status === 'could_not_complete');
   const visible   = statusFilter === 'active' ? active : completed;
 
+  function parseDetail(detail: string | null): { model?: string; tokens?: number } {
+    try { return detail ? JSON.parse(detail) : {}; } catch { return {}; }
+  }
+
   function formatTime(iso: string) {
     return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
   }
@@ -157,10 +161,16 @@ export default function SidePanel({ activities }: SidePanelProps) {
 
               {/* Description */}
               {task.description && (
-                <div style={{ color: '#bbbbbb', fontSize: 8, lineHeight: 1.9, marginBottom: 8, wordBreak: 'break-word', fontFamily: 'monospace' }}>
+                <div style={{ color: '#bbbbbb', fontSize: 11, lineHeight: 1.9, marginBottom: 8, wordBreak: 'break-word', fontFamily: 'monospace' }}>
                   {task.description.substring(0, 120)}{task.description.length > 120 ? '…' : ''}
                 </div>
               )}
+              {/* Model */}
+              {(() => { const d = parseDetail((task as any).detail); return d.model ? (
+                <div style={{ color: '#444', fontSize: 7, marginBottom: 6, letterSpacing: '0.3px' }}>
+                  {d.model}{d.tokens ? ` · ${d.tokens.toLocaleString()} tokens` : ''}
+                </div>
+              ) : null; })()}
 
               {/* Status badge */}
               <div style={{
@@ -213,10 +223,16 @@ export default function SidePanel({ activities }: SidePanelProps) {
 
               {/* Description */}
               {task.description && (
-                <div style={{ color: '#777777', fontSize: 7, lineHeight: 1.9, marginBottom: 8, fontFamily: 'monospace', wordBreak: 'break-word' }}>
+                <div style={{ color: '#777777', fontSize: 10, lineHeight: 1.9, marginBottom: 8, fontFamily: 'monospace', wordBreak: 'break-word' }}>
                   {task.description.substring(0, 100)}{task.description.length > 100 ? '…' : ''}
                 </div>
               )}
+              {/* Model */}
+              {(() => { const d = parseDetail((task as any).detail); return d.model ? (
+                <div style={{ color: '#444', fontSize: 7, marginBottom: 4, letterSpacing: '0.3px' }}>
+                  {d.model}{d.tokens ? ` · ${d.tokens.toLocaleString()} tokens` : ''}
+                </div>
+              ) : null; })()}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{
