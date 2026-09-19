@@ -19,7 +19,7 @@ function Clock() {
   return <span style={{ color: '#333', fontSize: 'var(--fs-xs)', fontVariantNumeric: 'tabular-nums', letterSpacing: '1px', fontFamily: '"Press Start 2P", cursive' }}>{time}</span>;
 }
 
-// ─── Hamburger Nav ──────────────────────────────────────────────────────────
+// ─── Hamburger Nav ──────────────────────────────────────────────────────────────
 
 function HamburgerNav() {
   const [open, setOpen] = useState(false);
@@ -54,9 +54,9 @@ function HamburgerNav() {
             right: 0,
             background: '#0a0a10',
             border: '1px solid #00FF66',
-            boxShadow: '0 0 20px #00FF6633',
-            zIndex: 100,
-            minWidth: 200,
+            boxShadow: '0 0 20px rgba(0,255,102,0.3)',
+            zIndex: 1000,
+            minWidth: 260,
             padding: '8px 0',
           }}>
             <a
@@ -64,12 +64,13 @@ function HamburgerNav() {
               onClick={() => setOpen(false)}
               style={{
                 display: 'block',
-                padding: '10px 16px',
+                padding: '12px 20px',
                 color: '#fff',
-                fontSize: 7,
+                fontSize: 9,
                 fontFamily: '"Press Start 2P", cursive',
-                letterSpacing: 2,
+                letterSpacing: 1,
                 textDecoration: 'none',
+                whiteSpace: 'nowrap',
                 borderBottom: '1px solid #111',
               }}
               onMouseEnter={e => { (e.target as HTMLElement).style.textShadow = '0 0 8px #fff'; (e.target as HTMLElement).style.background = '#111'; }}
@@ -82,12 +83,13 @@ function HamburgerNav() {
               onClick={() => setOpen(false)}
               style={{
                 display: 'block',
-                padding: '10px 16px',
+                padding: '12px 20px',
                 color: '#00FF66',
-                fontSize: 7,
+                fontSize: 9,
                 fontFamily: '"Press Start 2P", cursive',
-                letterSpacing: 2,
+                letterSpacing: 1,
                 textDecoration: 'none',
+                whiteSpace: 'nowrap',
               }}
               onMouseEnter={e => { (e.target as HTMLElement).style.textShadow = '0 0 8px #00FF66'; (e.target as HTMLElement).style.background = '#111'; }}
               onMouseLeave={e => { (e.target as HTMLElement).style.textShadow = 'none'; (e.target as HTMLElement).style.background = 'transparent'; }}
@@ -101,7 +103,7 @@ function HamburgerNav() {
   );
 }
 
-// ─── Task Feed ───────────────────────────────────────────────────────────────
+// ─── Task Feed ────────────────────────────────────────────────────────────────────────────────────
 
 interface OpsTask {
   id: string;
@@ -130,7 +132,11 @@ function statusColor(status: string): string {
   }
 }
 
-function TaskFeed() {
+interface TaskFeedProps {
+  onTasksLoaded?: (hasActive: boolean) => void;
+}
+
+function TaskFeed({ onTasksLoaded }: TaskFeedProps) {
   const [tasks, setTasks] = useState<OpsTask[]>([]);
   const [, setTick] = useState(0);
 
@@ -145,7 +151,11 @@ function TaskFeed() {
       );
       if (res.ok) {
         const data = await res.json();
-        setTasks(data ?? []);
+        const fetched = data ?? [];
+        setTasks(fetched);
+        if (onTasksLoaded) {
+          onTasksLoaded(fetched.some((t: OpsTask) => t.status === 'in_progress'));
+        }
       }
     } catch {
       // silently fail
@@ -248,6 +258,8 @@ const ROOM_LAYOUT: { id: string; project: Project; area: string }[] = [
 
 export default function Home() {
   const { projectActivity, recentFeed, isLoading, isConnected, isOffline } = useAgentActivity();
+  const [hasActiveTasks, setHasActiveTasks] = useState(false);
+
   const activeProjects = ROOM_LAYOUT
     .filter(r => projectActivity[r.project]?.status === 'in_progress')
     .map(r => r.project);
@@ -262,6 +274,12 @@ export default function Home() {
       overflow: 'hidden',
       position: 'relative',
     }}>
+      <style>{`
+        @keyframes botPulse {
+          0%, 100% { opacity: 1; filter: drop-shadow(0 0 4px #00FF66); }
+          50% { opacity: 0.6; filter: drop-shadow(0 0 12px #00FF66); }
+        }
+      `}</style>
       <CRTOverlay />
 
       {/* Main — 2/6 side panel + 4/6 stage, full height */}
@@ -301,90 +319,91 @@ export default function Home() {
             </div>
           </header>
 
-          {/* Task Feed */}
-          <TaskFeed />
+          {/* Task Feed — outside and below the header */}
+          <TaskFeed onTasksLoaded={setHasActiveTasks} />
 
-        {/* Stage — background image lives here only */}
-        <div
-          id="dungeon-stage"
-          style={{
-            flex: 1,
-            position: 'relative',
-            backgroundImage: 'url(/bg.png)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            minHeight: 0,
-            display: 'flex',
-          }}
-        >
+          {/* Stage — background image lives here only */}
           <div
-            id="stage-grid"
+            id="dungeon-stage"
             style={{
               flex: 1,
               position: 'relative',
-              display: 'grid',
-              gridTemplateAreas: `
-                "tl . tr"
-                ".  hq ."
-                "bl . br"
-              `,
-              gridTemplateColumns: '1fr auto 1fr',
-              gridTemplateRows: '1fr auto 1fr',
-              padding: '20px',
-              gap: '16px',
+              backgroundImage: 'url(/bg.png)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
               minHeight: 0,
-              overflow: 'visible',
+              display: 'flex',
             }}
           >
-          {/* Cable overlay — covers full stage */}
-          <CableGrid activeProjects={activeProjects} />
+            <div
+              id="stage-grid"
+              style={{
+                flex: 1,
+                position: 'relative',
+                display: 'grid',
+                gridTemplateAreas: `
+                  "tl . tr"
+                  ".  hq ."
+                  "bl . br"
+                `,
+                gridTemplateColumns: '1fr auto 1fr',
+                gridTemplateRows: '1fr auto 1fr',
+                padding: '20px',
+                gap: '16px',
+                minHeight: 0,
+                overflow: 'visible',
+              }}
+            >
+            {/* Cable overlay — covers full stage */}
+            <CableGrid activeProjects={activeProjects} />
 
-          {/* Central HQ */}
-          <div
-            id="central-hq"
-            className="hq-slot"
-            style={{
-              gridArea: 'hq',
-              alignSelf: 'center',
-              justifySelf: 'center',
-              zIndex: 10,
-            }}
-          >
-            <CentralHQ />
-          </div>
+            {/* Central HQ */}
+            <div
+              id="central-hq"
+              className="hq-slot"
+              style={{
+                gridArea: 'hq',
+                alignSelf: 'center',
+                justifySelf: 'center',
+                zIndex: 10,
+                animation: hasActiveTasks ? 'botPulse 1s ease-in-out infinite' : 'none',
+              }}
+            >
+              <CentralHQ />
+            </div>
 
-          {/* Four rooms */}
-          {ROOM_LAYOUT.map(({ id, project, area }) => {
-            const isLeft = area.endsWith('l');
-            const isTop = area.startsWith('t');
-            return (
-              <div
-                key={project}
-                className="room-slot-wrapper"
-                style={{
-                  gridArea: area,
-                  display: 'flex',
-                  alignItems: isTop ? 'flex-end' : 'flex-start',
-                  justifyContent: isLeft ? 'flex-end' : 'flex-start',
-                  padding: '0px',
-                }}
-              >
+            {/* Four rooms */}
+            {ROOM_LAYOUT.map(({ id, project, area }) => {
+              const isLeft = area.endsWith('l');
+              const isTop = area.startsWith('t');
+              return (
                 <div
-                  id={id}
-                  className="room-slot"
+                  key={project}
+                  className="room-slot-wrapper"
+                  style={{
+                    gridArea: area,
+                    display: 'flex',
+                    alignItems: isTop ? 'flex-end' : 'flex-start',
+                    justifyContent: isLeft ? 'flex-end' : 'flex-start',
+                    padding: '0px',
+                  }}
                 >
-                  <ProjectRoom
-                    project={project}
-                    activity={projectActivity[project]}
-                    recentHistory={recentFeed}
-                  />
+                  <div
+                    id={id}
+                    className="room-slot"
+                  >
+                    <ProjectRoom
+                      project={project}
+                      activity={projectActivity[project]}
+                      recentHistory={recentFeed}
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-          </div> {/* end stage-grid */}
-        </div> {/* end dungeon-stage */}
+              );
+            })}
+            </div> {/* end stage-grid */}
+          </div> {/* end dungeon-stage */}
 
           {/* Status bar */}
           <div style={{
