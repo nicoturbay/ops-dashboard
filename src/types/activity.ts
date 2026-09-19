@@ -62,3 +62,25 @@ export const STATUS_COLOR: Record<Status, string> = {
   completed:          '#4488ff',
   could_not_complete: '#ff4444',
 };
+
+// ─── Spend types ─────────────────────────────────────────────────────────────
+
+export interface SpendTransaction {
+  id: string;
+  service: string;
+  amount: number | string;
+  description: string | null;
+  charged_at: string;
+  created_at: string;
+}
+
+export interface ServiceSubscription {
+  id: string;
+  service: string;
+  category: 'ai_llm' | 'infrastructure' | string;
+  billing_type: 'subscription' | 'credits' | 'pay_as_you_go' | string;
+  monthly_cost: number | null;
+  billing_day: number | null;
+  notes: string | null;
+  active: boolean;
+}
