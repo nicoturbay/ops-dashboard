@@ -50,7 +50,6 @@ html, body {
   color: #e0e0e0;
   font-family: 'Press Start 2P', cursive;
   min-height: 100vh;
-  overflow: hidden;
   image-rendering: pixelated;
 }
 
