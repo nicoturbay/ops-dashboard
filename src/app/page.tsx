@@ -75,9 +75,9 @@ function HamburgerNav() {
             right: 0,
             background: '#0a0a10',
             border: '1px solid #00FF66',
-            boxShadow: '0 0 20px #00FF6633',
-            zIndex: 100,
-            minWidth: 200,
+            boxShadow: '0 0 20px rgba(0,255,102,0.3)',
+            zIndex: 1000,
+            minWidth: 260,
             padding: '8px 0',
           }}>
             <a
@@ -85,14 +85,14 @@ function HamburgerNav() {
               onClick={() => setOpen(false)}
               style={{
                 display: 'block',
-                padding: '10px 16px',
+                padding: '12px 20px',
                 color: '#00FF66',
-                fontSize: 7,
+                fontSize: 9,
                 fontFamily: '"Press Start 2P", cursive',
-                letterSpacing: 2,
+                letterSpacing: 1,
                 textDecoration: 'none',
+                whiteSpace: 'nowrap',
                 borderBottom: '1px solid #111',
-                transition: 'text-shadow 0.1s',
               }}
               onMouseEnter={e => { (e.target as HTMLElement).style.textShadow = '0 0 8px #00FF66'; (e.target as HTMLElement).style.background = '#111'; }}
               onMouseLeave={e => { (e.target as HTMLElement).style.textShadow = 'none'; (e.target as HTMLElement).style.background = 'transparent'; }}
@@ -104,13 +104,13 @@ function HamburgerNav() {
               onClick={() => setOpen(false)}
               style={{
                 display: 'block',
-                padding: '10px 16px',
+                padding: '12px 20px',
                 color: '#fff',
-                fontSize: 7,
+                fontSize: 9,
                 fontFamily: '"Press Start 2P", cursive',
-                letterSpacing: 2,
+                letterSpacing: 1,
                 textDecoration: 'none',
-                transition: 'text-shadow 0.1s',
+                whiteSpace: 'nowrap',
               }}
               onMouseEnter={e => { (e.target as HTMLElement).style.textShadow = '0 0 8px #fff'; (e.target as HTMLElement).style.background = '#111'; }}
               onMouseLeave={e => { (e.target as HTMLElement).style.textShadow = 'none'; (e.target as HTMLElement).style.background = 'transparent'; }}
