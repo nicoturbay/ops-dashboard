@@ -310,7 +310,7 @@ export default function SpendPage() {
           >
             {syncing ? '[ SYNCING... ]' : '[ SYNC NOW ]'}
           </button>
-          <a href='/'
+          <a href='/hq'
             style={{ display: 'inline-block', fontSize: 7, color: '#555', border: '1px solid #333', padding: '6px 10px', textDecoration: 'none', letterSpacing: 2 }}
             onMouseEnter={e => { (e.target as HTMLElement).style.color = '#fff'; (e.target as HTMLElement).style.borderColor = '#fff'; }}
             onMouseLeave={e => { (e.target as HTMLElement).style.color = '#555'; (e.target as HTMLElement).style.borderColor = '#333'; }}
