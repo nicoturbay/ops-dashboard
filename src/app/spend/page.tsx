@@ -1,13 +1,27 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import CRTOverlay from '@/components/CRTOverlay';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
 import { SpendTransaction, ServiceSubscription } from '@/types/activity';
 
+// ─── helpers ────────────────────────────────────────────────────────────────
+
 function usd(n: number | null | undefined) {
   if (n == null) return 'N/A';
-  return '$' + n.toFixed(2);
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+
+function daysAgoIso(days: number) {
+  return new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+}
+
+const PERIODS: { label: string; days: number }[] = [
+  { label: '7D',  days: 7  },
+  { label: '30D', days: 30 },
+  { label: '90D', days: 90 },
+];
+
+// ─── sub-components ─────────────────────────────────────────────────────────
 
 function Pill({ label, color }: { label: string; color: string }) {
   return (
@@ -51,7 +65,6 @@ function CreditsSection() {
       <h2 style={{ color: '#888', fontSize: 8, letterSpacing: 3, marginBottom: 12 }}>[ LIVE BALANCES ]</h2>
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
 
-        {/* KIE.ai */}
         <div style={card}>
           <div style={{ color: '#555', fontSize: 7, letterSpacing: 2, marginBottom: 8 }}>KIE.AI</div>
           <div style={{ fontSize: 20, color: '#00CC44', textShadow: '0 0 12px #00CC4488', fontVariantNumeric: 'tabular-nums', marginBottom: 6 }}>
@@ -62,16 +75,14 @@ function CreditsSection() {
           </div>
         </div>
 
-        {/* Higgsfield */}
         <div style={card}>
           <div style={{ color: '#555', fontSize: 7, letterSpacing: 2, marginBottom: 8 }}>HIGGSFIELD</div>
           <div style={{ fontSize: 14, color: '#FF6B00', textShadow: '0 0 10px #FF6B0066', marginBottom: 6 }}>
-            {usd(data?.higgsfield.monthly)}/MO
+            {data ? usd(data.higgsfield.monthly) : '...'}/MO
           </div>
           <div style={{ color: '#444', fontSize: 6, letterSpacing: 1 }}>CREDITS PLAN — NO API</div>
         </div>
 
-        {/* Twilio */}
         <div style={card}>
           <div style={{ color: '#555', fontSize: 7, letterSpacing: 2, marginBottom: 8 }}>TWILIO</div>
           <div style={{ fontSize: 20, color: '#8CA4FF', textShadow: '0 0 12px #8CA4FF55', fontVariantNumeric: 'tabular-nums', marginBottom: 6 }}>
@@ -149,11 +160,13 @@ function SubscriptionsSection({ subs }: { subs: ServiceSubscription[] }) {
   );
 }
 
-function SpendFeed({ txns }: { txns: SpendTransaction[] }) {
+function SpendFeed({ txns, periodLabel }: { txns: SpendTransaction[]; periodLabel: string }) {
   const total = txns.reduce((s, t) => s + Number(t.amount), 0);
   return (
     <section style={{ marginBottom: 32 }}>
-      <h2 style={{ color: '#888', fontSize: 8, letterSpacing: 3, marginBottom: 12 }}>[ RECENT CHARGES — LAST 30 DAYS ]</h2>
+      <h2 style={{ color: '#888', fontSize: 8, letterSpacing: 3, marginBottom: 12 }}>
+        [ RECENT CHARGES — {periodLabel} ]
+      </h2>
       <div style={{ background: '#0a0a10', border: '1px solid #222', padding: '0 0 12px' }}>
         {txns.length === 0 ? (
           <div style={{ padding: 20, color: '#333', fontSize: 7, letterSpacing: 2 }}>NO TRANSACTIONS YET — SYNC SCRIPT POPULATES THIS</div>
@@ -203,11 +216,29 @@ function BurnEstimate({ subs }: { subs: ServiceSubscription[] }) {
   );
 }
 
-export default function SpendPage() {
-  const [subs, setSubs] = useState<ServiceSubscription[]>([]);
-  const [txns, setTxns] = useState<SpendTransaction[]>([]);
-  const [loading, setLoading] = useState(true);
+// ─── main page ──────────────────────────────────────────────────────────────
 
+export default function SpendPage() {
+  const [subs, setSubs]           = useState<ServiceSubscription[]>([]);
+  const [txns, setTxns]           = useState<SpendTransaction[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [periodIdx, setPeriodIdx] = useState(1);          // default: 30D
+  const [syncing, setSyncing]     = useState(false);
+  const [syncMsg, setSyncMsg]     = useState('');
+
+  const period = PERIODS[periodIdx];
+
+  const fetchTxns = useCallback((days: number) => {
+    if (!isSupabaseConfigured) return;
+    const db = getSupabaseClient();
+    db.from('spend_transactions')
+      .select('*')
+      .gte('charged_at', daysAgoIso(days))
+      .order('charged_at', { ascending: false })
+      .then(({ data: t }) => setTxns((t as SpendTransaction[]) ?? []));
+  }, []);
+
+  // Initial load
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
     const db = getSupabaseClient();
@@ -215,19 +246,48 @@ export default function SpendPage() {
       db.from('service_subscriptions').select('*').eq('active', true).order('category').order('service'),
       db.from('spend_transactions')
         .select('*')
-        .gte('charged_at', new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10))
+        .gte('charged_at', daysAgoIso(period.days))
         .order('charged_at', { ascending: false }),
     ]).then(([{ data: s }, { data: t }]) => {
       setSubs((s as ServiceSubscription[]) ?? []);
       setTxns((t as SpendTransaction[]) ?? []);
       setLoading(false);
     }).catch(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Re-fetch transactions whenever period changes (after initial load)
+  const [initialized, setInitialized] = useState(false);
+  useEffect(() => {
+    if (!initialized) { setInitialized(true); return; }
+    fetchTxns(period.days);
+  }, [periodIdx, fetchTxns, initialized]);
+
+  // Sync handler
+  async function handleSync() {
+    setSyncing(true);
+    setSyncMsg('');
+    try {
+      const res = await fetch('/api/spend/sync', { method: 'POST' });
+      const body = await res.json().catch(() => ({}));
+      setSyncMsg(res.ok ? `SYNCED — ${body.inserted ?? 0} NEW RECORDS` : 'SYNC FAILED');
+      if (res.ok) fetchTxns(period.days);
+    } catch {
+      setSyncMsg('SYNC FAILED');
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  // Grand total of currently visible transactions
+  const grandTotal = txns.reduce((s, t) => s + Number(t.amount), 0);
 
   return (
     <div style={{ minHeight: '100vh', background: '#050508', fontFamily: '"Press Start 2P", cursive', color: '#fff', position: 'relative', paddingBottom: 40 }}>
       <CRTOverlay />
-      <header style={{ padding: '16px 32px 14px', borderBottom: '1px solid #111', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+
+      {/* ── Header ── */}
+      <header style={{ padding: '16px 32px 14px', borderBottom: '1px solid #111', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
         <div>
           <h1 style={{ fontSize: 'clamp(10px, 1.6vw, 18px)', color: '#fff', letterSpacing: '6px', marginBottom: 4, textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
             SPEND CONTROL
@@ -236,14 +296,92 @@ export default function SpendPage() {
             [ SERVICES &amp; SUBSCRIPTIONS DASHBOARD ]
           </p>
         </div>
-        <a href='/'
-          style={{ display: 'inline-block', fontSize: 7, color: '#555', border: '1px solid #333', padding: '6px 10px', textDecoration: 'none', letterSpacing: 2 }}
-          onMouseEnter={e => { (e.target as HTMLElement).style.color = '#fff'; (e.target as HTMLElement).style.borderColor = '#fff'; }}
-          onMouseLeave={e => { (e.target as HTMLElement).style.color = '#555'; (e.target as HTMLElement).style.borderColor = '#333'; }}
-        >
-          [ MISSION CTRL ]
-        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            style={{
+              fontSize: 7, fontFamily: '"Press Start 2P", cursive',
+              color: syncing ? '#444' : '#FF6B00',
+              border: `1px solid ${syncing ? '#333' : '#FF6B00'}`,
+              background: 'transparent', padding: '6px 10px',
+              cursor: syncing ? 'not-allowed' : 'pointer', letterSpacing: 2,
+            }}
+          >
+            {syncing ? '[ SYNCING... ]' : '[ SYNC NOW ]'}
+          </button>
+          <a href='/'
+            style={{ display: 'inline-block', fontSize: 7, color: '#555', border: '1px solid #333', padding: '6px 10px', textDecoration: 'none', letterSpacing: 2 }}
+            onMouseEnter={e => { (e.target as HTMLElement).style.color = '#fff'; (e.target as HTMLElement).style.borderColor = '#fff'; }}
+            onMouseLeave={e => { (e.target as HTMLElement).style.color = '#555'; (e.target as HTMLElement).style.borderColor = '#333'; }}
+          >
+            [ MISSION CTRL ]
+          </a>
+        </div>
       </header>
+
+      {/* ── Grand Total Banner ── */}
+      <div style={{
+        background: '#020206',
+        borderBottom: '1px solid #1a1a1a',
+        padding: '28px 32px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 16,
+      }}>
+        {/* Period toggle */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {PERIODS.map((p, i) => {
+            const active = i === periodIdx;
+            return (
+              <button
+                key={p.label}
+                onClick={() => setPeriodIdx(i)}
+                style={{
+                  fontSize: 7,
+                  fontFamily: '"Press Start 2P", cursive',
+                  color: active ? '#000' : '#555',
+                  background: active ? '#FF6B00' : 'transparent',
+                  border: `1px solid ${active ? '#FF6B00' : '#333'}`,
+                  padding: '5px 14px',
+                  cursor: 'pointer',
+                  letterSpacing: 2,
+                  boxShadow: active ? '0 0 12px #FF6B0066' : 'none',
+                  transition: 'all 0.1s',
+                }}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* The dominant number */}
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ color: '#333', fontSize: 7, letterSpacing: 4, marginBottom: 10 }}>TOTAL SPEND</div>
+          <div style={{
+            fontSize: 'clamp(36px, 6vw, 72px)',
+            color: '#00FF66',
+            textShadow: '0 0 20px #00FF66, 0 0 40px #00CC4499, 0 0 80px #00CC4433',
+            fontVariantNumeric: 'tabular-nums',
+            letterSpacing: 6,
+            lineHeight: 1,
+          }}>
+            {loading ? '...' : usd(grandTotal)}
+          </div>
+          <div style={{ color: '#444', fontSize: 6, letterSpacing: 3, marginTop: 10 }}>
+            LAST {period.label === '7D' ? '7' : period.label === '30D' ? '30' : '90'} DAYS
+          </div>
+          {syncMsg && (
+            <div style={{ color: syncMsg.includes('FAIL') ? '#ff4444' : '#00CC44', fontSize: 6, letterSpacing: 2, marginTop: 8 }}>
+              {syncMsg}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Body ── */}
       <main style={{ padding: '28px 32px 0', maxWidth: 1100, margin: '0 auto' }}>
         {loading ? (
           <div style={{ color: '#333', fontSize: 8, letterSpacing: 3, marginTop: 40 }}>LOADING...</div>
@@ -252,7 +390,7 @@ export default function SpendPage() {
             <CreditsSection />
             <BurnEstimate subs={subs} />
             <SubscriptionsSection subs={subs} />
-            <SpendFeed txns={txns} />
+            <SpendFeed txns={txns} periodLabel={`LAST ${period.days}D`} />
           </>
         )}
       </main>
