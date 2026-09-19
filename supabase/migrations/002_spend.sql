@@ -7,7 +7,8 @@ CREATE TABLE spend_transactions (
   amount NUMERIC(10,2) NOT NULL,
   description TEXT,
   charged_at DATE NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT spend_unique_service_date UNIQUE (service, charged_at, amount)
 );
 ALTER TABLE spend_transactions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public read" ON spend_transactions FOR SELECT USING (true);
@@ -20,7 +21,7 @@ CREATE TABLE service_subscriptions (
   category TEXT NOT NULL,
   monthly_cost NUMERIC(10,2),
   billing_type TEXT NOT NULL, -- 'subscription' | 'usage' | 'credits'
-  billing_day INTEGER, -- day of month it bills
+  billing_day INTEGER,
   next_billing_date DATE,
   notes TEXT,
   active BOOLEAN DEFAULT true,
@@ -45,4 +46,4 @@ INSERT INTO service_subscriptions (service, category, monthly_cost, billing_type
 ('Supabase (KINCE)', 'infrastructure', 35.00, 'subscription', 9, null),
 ('Render.com', 'infrastructure', 7.00, 'subscription', 4, null),
 ('Notion', 'infrastructure', 24.00, 'subscription', 30, null),
-('Twilio', 'infrastructure', 5.00, 'usage', null, 'Pay-as-you-go · 2 phone numbers: (844) 523-2760 & (786) 998-5740');
+('Twilio', 'infrastructure', 5.00, 'usage', null, 'Pay-as-you-go · phone bridge (786) 998-5740');
