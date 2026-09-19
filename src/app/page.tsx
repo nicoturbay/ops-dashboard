@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import CRTOverlay from '@/components/CRTOverlay';
 import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase';
-import { SpendTransaction, ServiceSubscription } from '@/types/activity';
+import { ServiceSubscription } from '@/types/activity';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -10,16 +10,6 @@ function usd(n: number | null | undefined) {
   if (n == null) return 'N/A';
   return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-
-function daysAgoIso(days: number) {
-  return new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
-}
-
-const PERIODS: { label: string; days: number }[] = [
-  { label: '7D',  days: 7  },
-  { label: '30D', days: 30 },
-  { label: '90D', days: 90 },
-];
 
 // ─── sub-components ─────────────────────────────────────────────────────────
 
@@ -306,103 +296,37 @@ function SubscriptionsSection({ subs }: { subs: ServiceSubscription[] }) {
   );
 }
 
-function SpendFeed({ txns, periodLabel }: { txns: SpendTransaction[]; periodLabel: string }) {
-  const total = txns.reduce((s, t) => s + Number(t.amount), 0);
-  return (
-    <section style={{ marginBottom: 32 }}>
-      <h2 style={{ color: '#888', fontSize: 8, letterSpacing: 3, marginBottom: 12 }}>
-        [ RECENT CHARGES — {periodLabel} ]
-      </h2>
-      <div style={{ background: '#0a0a10', border: '1px solid #222', padding: '0 0 12px' }}>
-        {txns.length === 0 ? (
-          <div style={{ padding: 20, color: '#333', fontSize: 7, letterSpacing: 2 }}>NO TRANSACTIONS YET — SYNC SCRIPT POPULATES THIS</div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: '"Press Start 2P", cursive' }}>
-            <thead>
-              <tr>
-                {['DATE', 'SERVICE', 'AMOUNT', 'DESCRIPTION'].map(h => (
-                  <th key={h} style={{ padding: '8px 10px', color: '#444', fontSize: 6, letterSpacing: 2, fontWeight: 'normal', borderBottom: '1px solid #222', textAlign: 'left' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {txns.map(t => (
-                <tr key={t.id} style={{ borderBottom: '1px solid #111' }}>
-                  <td style={{ padding: '7px 10px', color: '#555', fontSize: 6, whiteSpace: 'nowrap' }}>{t.charged_at}</td>
-                  <td style={{ padding: '7px 10px', color: '#FF8A3D', fontSize: 7 }}>{t.service}</td>
-                  <td style={{ padding: '7px 10px', color: '#00CC44', fontSize: 7, textShadow: '0 0 8px #00CC4455', fontVariantNumeric: 'tabular-nums' }}>{usd(Number(t.amount))}</td>
-                  <td style={{ padding: '7px 10px', color: '#444', fontSize: 6 }}>{t.description ?? '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {txns.length > 0 && (
-          <div style={{ padding: '12px 10px 0', textAlign: 'right', color: '#00CC44', fontSize: 8, textShadow: '0 0 10px #00CC44' }}>
-            TOTAL: {usd(total)}
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
 // ─── main page ──────────────────────────────────────────────────────────────
 
 export default function SpendPage() {
-  const [subs, setSubs]           = useState<ServiceSubscription[]>([]);
-  const [txns, setTxns]           = useState<SpendTransaction[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [periodIdx, setPeriodIdx] = useState(1);          // default: 30D
-  const [syncing, setSyncing]     = useState(false);
-  const [syncMsg, setSyncMsg]     = useState('');
+  const [subs, setSubs]       = useState<ServiceSubscription[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState('');
 
-  const period = PERIODS[periodIdx];
-
-  const fetchTxns = useCallback((days: number) => {
-    if (!isSupabaseConfigured) return;
-    const db = getSupabaseClient();
-    db.from('spend_transactions')
-      .select('*')
-      .gte('charged_at', daysAgoIso(days))
-      .order('charged_at', { ascending: false })
-      .then(({ data: t }) => setTxns((t as SpendTransaction[]) ?? []));
-  }, []);
-
-  // Initial load
+  // Initial load — subscriptions only
   useEffect(() => {
     if (!isSupabaseConfigured) { setLoading(false); return; }
     const db = getSupabaseClient();
-    Promise.all([
-      db.from('service_subscriptions').select('*').eq('active', true).order('category').order('service'),
-      db.from('spend_transactions')
-        .select('*')
-        .gte('charged_at', daysAgoIso(period.days))
-        .order('charged_at', { ascending: false }),
-    ]).then(([{ data: s }, { data: t }]) => {
-      setSubs((s as ServiceSubscription[]) ?? []);
-      setTxns((t as SpendTransaction[]) ?? []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    db.from('service_subscriptions')
+      .select('*')
+      .eq('active', true)
+      .order('category')
+      .order('service')
+      .then(({ data: s }) => {
+        setSubs((s as ServiceSubscription[]) ?? []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
 
-  // Re-fetch transactions whenever period changes (after initial load)
-  const [initialized, setInitialized] = useState(false);
-  useEffect(() => {
-    if (!initialized) { setInitialized(true); return; }
-    fetchTxns(period.days);
-  }, [periodIdx, fetchTxns, initialized]);
-
-  // Sync handler
+  // Sync handler — syncs live balances (KIE, Twilio)
   async function handleSync() {
     setSyncing(true);
     setSyncMsg('');
     try {
       const res = await fetch('/api/spend/sync', { method: 'POST' });
-      const body = await res.json().catch(() => ({}));
-      setSyncMsg(res.ok ? `SYNCED — ${body.inserted ?? 0} NEW RECORDS` : 'SYNC FAILED');
-      if (res.ok) fetchTxns(period.days);
+      setSyncMsg(res.ok ? 'SYNCED' : 'SYNC FAILED');
     } catch {
       setSyncMsg('SYNC FAILED');
     } finally {
@@ -410,10 +334,7 @@ export default function SpendPage() {
     }
   }
 
-  // Grand total computed from date-filtered transactions
-  const grandTotal = txns.reduce((s, t) => s + Number(t.amount), 0);
-
-  // Estimated monthly burn from subscriptions
+  // Estimated monthly burn from active subscriptions with known cost
   const burnTotal = subs.filter(s => s.active && s.monthly_cost != null).reduce((s, x) => s + Number(x.monthly_cost ?? 0), 0);
 
   return (
@@ -457,6 +378,11 @@ export default function SpendPage() {
           >
             {syncing ? '[ SYNCING... ]' : '[ SYNC NOW ]'}
           </button>
+          {syncMsg && (
+            <span style={{ color: syncMsg.includes('FAIL') ? '#ff4444' : '#00CC44', fontSize: 6, letterSpacing: 2 }}>
+              {syncMsg}
+            </span>
+          )}
         </div>
 
         {/* Center: Page title */}
@@ -475,65 +401,32 @@ export default function SpendPage() {
         </div>
       </header>
 
-      {/* ── Period selector + Total Spend ── */}
+      {/* ── EST. MONTHLY BURN hero ── */}
       <div style={{
         background: '#020206',
         borderBottom: '1px solid #1a1a1a',
-        padding: '28px 32px 24px',
+        padding: '40px 32px 36px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 16,
       }}>
-        {/* Period toggle */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          {PERIODS.map((p, i) => {
-            const active = i === periodIdx;
-            return (
-              <button
-                key={p.label}
-                onClick={() => setPeriodIdx(i)}
-                style={{
-                  fontSize: 7,
-                  fontFamily: '"Press Start 2P", cursive',
-                  color: active ? '#000' : '#555',
-                  background: active ? '#FF6B00' : 'transparent',
-                  border: `1px solid ${active ? '#FF6B00' : '#333'}`,
-                  padding: '5px 14px',
-                  cursor: 'pointer',
-                  letterSpacing: 2,
-                  boxShadow: active ? '0 0 12px #FF6B0066' : 'none',
-                  transition: 'all 0.1s',
-                }}
-              >
-                {p.label}
-              </button>
-            );
-          })}
+        <div style={{ color: '#444', fontSize: 7, letterSpacing: 4, marginBottom: 16 }}>EST. MONTHLY BURN</div>
+        <div style={{
+          fontSize: 'clamp(48px, 8vw, 96px)',
+          color: '#00FF66',
+          textShadow: '0 0 20px #00FF66, 0 0 40px #00CC4499, 0 0 80px #00CC4433',
+          fontVariantNumeric: 'tabular-nums',
+          letterSpacing: 6,
+          lineHeight: 1,
+        }}>
+          {loading ? '...' : usd(burnTotal)}
+        </div>
+        <div style={{ color: '#333', fontSize: 6, letterSpacing: 3, marginTop: 14 }}>
+          TRACKED ACROSS 14 SERVICES · VARIABLE SPEND ESTIMATED
         </div>
 
-        {/* Total spend number */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ color: '#333', fontSize: 7, letterSpacing: 4, marginBottom: 10 }}>TOTAL SPEND</div>
-          <div style={{
-            fontSize: 'clamp(36px, 6vw, 72px)',
-            color: '#00FF66',
-            textShadow: '0 0 20px #00FF66, 0 0 40px #00CC4499, 0 0 80px #00CC4433',
-            fontVariantNumeric: 'tabular-nums',
-            letterSpacing: 6,
-            lineHeight: 1,
-          }}>
-            {loading ? '...' : usd(grandTotal)}
-          </div>
-          <div style={{ color: '#444', fontSize: 6, letterSpacing: 3, marginTop: 10 }}>
-            LAST {period.label === '7D' ? '7' : period.label === '30D' ? '30' : '90'} DAYS
-          </div>
-          {syncMsg && (
-            <div style={{ color: syncMsg.includes('FAIL') ? '#ff4444' : '#00CC44', fontSize: 6, letterSpacing: 2, marginTop: 8 }}>
-              {syncMsg}
-            </div>
-          )}
-        </div>
+        {/* Live balance cards */}
+        <LiveBalanceCards />
       </div>
 
       {/* ── Body ── */}
@@ -542,26 +435,6 @@ export default function SpendPage() {
           <div style={{ color: '#333', fontSize: 8, letterSpacing: 3, marginTop: 40 }}>LOADING...</div>
         ) : (
           <>
-            {/* EST. MONTHLY BURN + Live Balances merged */}
-            <section style={{ marginBottom: 32 }}>
-              <h2 style={{ color: '#888', fontSize: 8, letterSpacing: 3, marginBottom: 12 }}>[ EST. MONTHLY BURN ]</h2>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  display: 'inline-block',
-                  background: '#0a0a10',
-                  border: '1px solid #222',
-                  padding: '20px 32px',
-                  marginBottom: 0,
-                }}>
-                  <div style={{ fontSize: 28, color: '#00CC44', textShadow: '0 0 20px #00CC44, 0 0 40px #00CC4466', fontVariantNumeric: 'tabular-nums', letterSpacing: 4 }}>
-                    {usd(burnTotal)}
-                  </div>
-                  <div style={{ color: '#333', fontSize: 6, letterSpacing: 2, marginTop: 8 }}>TRACKED SERVICES · VARIABLE SPEND ESTIMATED</div>
-                </div>
-              </div>
-              <LiveBalanceCards />
-            </section>
-
             {/* Services */}
             <ServiceCardsSection subs={subs} />
 
