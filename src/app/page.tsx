@@ -39,13 +39,100 @@ function Pill({ label, color }: { label: string; color: string }) {
   );
 }
 
+// ─── Hamburger Nav ──────────────────────────────────────────────────────────
+
+function HamburgerNav() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          fontSize: 18,
+          color: '#00FF66',
+          background: 'transparent',
+          border: '1px solid #333',
+          padding: '4px 10px',
+          cursor: 'pointer',
+          fontFamily: 'monospace',
+          lineHeight: 1,
+          letterSpacing: 0,
+        }}
+        aria-label="Open navigation menu"
+      >
+        ☰
+      </button>
+      {open && (
+        <>
+          {/* backdrop to close */}
+          <div
+            onClick={() => setOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+          />
+          <div style={{
+            position: 'absolute',
+            top: '110%',
+            right: 0,
+            background: '#0a0a10',
+            border: '1px solid #00FF66',
+            boxShadow: '0 0 20px #00FF6633',
+            zIndex: 100,
+            minWidth: 200,
+            padding: '8px 0',
+          }}>
+            <a
+              href="/"
+              onClick={() => setOpen(false)}
+              style={{
+                display: 'block',
+                padding: '10px 16px',
+                color: '#00FF66',
+                fontSize: 7,
+                fontFamily: '"Press Start 2P", cursive',
+                letterSpacing: 2,
+                textDecoration: 'none',
+                borderBottom: '1px solid #111',
+                transition: 'text-shadow 0.1s',
+              }}
+              onMouseEnter={e => { (e.target as HTMLElement).style.textShadow = '0 0 8px #00FF66'; (e.target as HTMLElement).style.background = '#111'; }}
+              onMouseLeave={e => { (e.target as HTMLElement).style.textShadow = 'none'; (e.target as HTMLElement).style.background = 'transparent'; }}
+            >
+              [ SPEND CONTROL ]
+            </a>
+            <a
+              href="/hq"
+              onClick={() => setOpen(false)}
+              style={{
+                display: 'block',
+                padding: '10px 16px',
+                color: '#fff',
+                fontSize: 7,
+                fontFamily: '"Press Start 2P", cursive',
+                letterSpacing: 2,
+                textDecoration: 'none',
+                transition: 'text-shadow 0.1s',
+              }}
+              onMouseEnter={e => { (e.target as HTMLElement).style.textShadow = '0 0 8px #fff'; (e.target as HTMLElement).style.background = '#111'; }}
+              onMouseLeave={e => { (e.target as HTMLElement).style.textShadow = 'none'; (e.target as HTMLElement).style.background = 'transparent'; }}
+            >
+              [ MISSION CONTROL ]
+            </a>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── Live Balances inside Burn section ──────────────────────────────────────
+
 interface CreditsData {
   kie:        { credits: number; live: boolean };
   higgsfield: { monthly: number };
   twilio:     { balance: number; live: boolean; phone: string };
 }
 
-function CreditsSection() {
+function LiveBalanceCards() {
   const [data, setData] = useState<CreditsData | null>(null);
 
   useEffect(() => {
@@ -61,47 +148,41 @@ function CreditsSection() {
   };
 
   return (
-    <section style={{ marginBottom: 32 }}>
-      <h2 style={{ color: '#888', fontSize: 8, letterSpacing: 3, marginBottom: 12 }}>[ LIVE BALANCES ]</h2>
-      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-
-        <div style={card}>
-          <div style={{ color: '#555', fontSize: 7, letterSpacing: 2, marginBottom: 8 }}>KIE.AI</div>
-          <div style={{ fontSize: 20, color: '#00CC44', textShadow: '0 0 12px #00CC4488', fontVariantNumeric: 'tabular-nums', marginBottom: 6 }}>
-            {data ? data.kie.credits.toLocaleString() : '...'}
-          </div>
-          <div style={{ color: '#444', fontSize: 6, letterSpacing: 1 }}>
-            {data?.kie.live ? '● LIVE CREDITS' : '● CACHED'}
-          </div>
+    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', marginTop: 20 }}>
+      <div style={card}>
+        <div style={{ color: '#555', fontSize: 7, letterSpacing: 2, marginBottom: 8 }}>KIE.AI</div>
+        <div style={{ fontSize: 20, color: '#00CC44', textShadow: '0 0 12px #00CC4488', fontVariantNumeric: 'tabular-nums', marginBottom: 6 }}>
+          {data ? data.kie.credits.toLocaleString() : '...'}
         </div>
-
-        <div style={card}>
-          <div style={{ color: '#555', fontSize: 7, letterSpacing: 2, marginBottom: 8 }}>HIGGSFIELD</div>
-          <div style={{ fontSize: 14, color: '#FF6B00', textShadow: '0 0 10px #FF6B0066', marginBottom: 6 }}>
-            {data ? usd(data.higgsfield.monthly) : '...'}/MO
-          </div>
-          <div style={{ color: '#444', fontSize: 6, letterSpacing: 1 }}>CREDITS PLAN — NO API</div>
+        <div style={{ color: '#444', fontSize: 6, letterSpacing: 1 }}>
+          {data?.kie.live ? '● LIVE CREDITS' : '● CACHED'}
         </div>
-
-        <div style={card}>
-          <div style={{ color: '#555', fontSize: 7, letterSpacing: 2, marginBottom: 8 }}>TWILIO</div>
-          <div style={{ fontSize: 20, color: '#8CA4FF', textShadow: '0 0 12px #8CA4FF55', fontVariantNumeric: 'tabular-nums', marginBottom: 6 }}>
-            {data ? usd(data.twilio.balance) : '...'}
-          </div>
-          <div style={{ color: '#444', fontSize: 6, letterSpacing: 1, marginBottom: 8 }}>
-            {data?.twilio.live ? '● LIVE BALANCE' : '● CACHED'}
-          </div>
-          <div style={{ color: '#555', fontSize: 6, letterSpacing: 1 }}>PHONE BRIDGE</div>
-          <div style={{ color: '#8CA4FF', fontSize: 6, letterSpacing: 1, marginTop: 2 }}>
-            {data?.twilio.phone ?? '(786) 998-5740'}
-          </div>
-        </div>
-
       </div>
-    </section>
+
+      <div style={card}>
+        <div style={{ color: '#555', fontSize: 7, letterSpacing: 2, marginBottom: 8 }}>HIGGSFIELD</div>
+        <div style={{ fontSize: 14, color: '#FF6B00', textShadow: '0 0 10px #FF6B0066', marginBottom: 6 }}>
+          {data ? usd(data.higgsfield.monthly) : '...'}/MO
+        </div>
+        <div style={{ color: '#444', fontSize: 6, letterSpacing: 1 }}>CREDITS PLAN — NO API</div>
+      </div>
+
+      <div style={card}>
+        <div style={{ color: '#555', fontSize: 7, letterSpacing: 2, marginBottom: 8 }}>TWILIO</div>
+        <div style={{ fontSize: 20, color: '#8CA4FF', textShadow: '0 0 12px #8CA4FF55', fontVariantNumeric: 'tabular-nums', marginBottom: 6 }}>
+          {data ? usd(data.twilio.balance) : '...'}
+        </div>
+        <div style={{ color: '#444', fontSize: 6, letterSpacing: 1, marginBottom: 8 }}>
+          {data?.twilio.live ? '● LIVE BALANCE' : '● CACHED'}
+        </div>
+        <div style={{ color: '#555', fontSize: 6, letterSpacing: 1 }}>PHONE BRIDGE</div>
+        <div style={{ color: '#8CA4FF', fontSize: 6, letterSpacing: 1, marginTop: 2 }}>
+          {data?.twilio.phone ?? '(786) 998-5740'}
+        </div>
+      </div>
+    </div>
   );
 }
-
 
 function ServiceCardsSection({ subs }: { subs: ServiceSubscription[] }) {
   if (subs.length === 0) return null;
@@ -132,52 +213,29 @@ function ServiceCardsSection({ subs }: { subs: ServiceSubscription[] }) {
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#00FF66'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 10px #00FF6633'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#222'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
           >
-            {/* Service name */}
             <div style={{ color: '#fff', fontSize: 7, letterSpacing: 1, lineHeight: 1.5 }}>{sub.service}</div>
-
-            {/* Category + billing type pills */}
             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
               <span style={{
-                fontSize: 6,
-                fontFamily: '"Press Start 2P", cursive',
-                color: catColor(sub.category),
-                border: `1px solid ${catColor(sub.category)}`,
-                padding: '2px 5px',
-                letterSpacing: 1,
-                whiteSpace: 'nowrap',
+                fontSize: 6, fontFamily: '"Press Start 2P", cursive',
+                color: catColor(sub.category), border: `1px solid ${catColor(sub.category)}`,
+                padding: '2px 5px', letterSpacing: 1, whiteSpace: 'nowrap',
               }}>
                 {catLabel(sub.category)}
               </span>
               <span style={{
-                fontSize: 6,
-                fontFamily: '"Press Start 2P", cursive',
-                color: billingColor(sub.billing_type),
-                border: `1px solid ${billingColor(sub.billing_type)}`,
-                padding: '2px 5px',
-                letterSpacing: 1,
-                whiteSpace: 'nowrap',
+                fontSize: 6, fontFamily: '"Press Start 2P", cursive',
+                color: billingColor(sub.billing_type), border: `1px solid ${billingColor(sub.billing_type)}`,
+                padding: '2px 5px', letterSpacing: 1, whiteSpace: 'nowrap',
               }}>
                 {sub.billing_type.toUpperCase()}
               </span>
             </div>
-
-            {/* Monthly cost */}
-            <div style={{
-              fontSize: 16,
-              color: '#00CC44',
-              textShadow: '0 0 10px #00CC4466',
-              fontVariantNumeric: 'tabular-nums',
-              letterSpacing: 2,
-            }}>
+            <div style={{ fontSize: 16, color: '#00CC44', textShadow: '0 0 10px #00CC4466', fontVariantNumeric: 'tabular-nums', letterSpacing: 2 }}>
               {sub.monthly_cost != null ? usd(sub.monthly_cost) : 'CREDIT-BASED'}
             </div>
-
-            {/* Bill day */}
             <div style={{ color: '#444', fontSize: 6, letterSpacing: 1 }}>
               {sub.billing_day ? `BILLS DAY ${sub.billing_day}` : 'VARIABLE'}
             </div>
-
-            {/* Notes */}
             {sub.notes && (
               <div style={{ color: '#333', fontSize: 6, letterSpacing: 1, lineHeight: 1.6, marginTop: 2 }}>
                 {sub.notes}
@@ -289,21 +347,6 @@ function SpendFeed({ txns, periodLabel }: { txns: SpendTransaction[]; periodLabe
   );
 }
 
-function BurnEstimate({ subs }: { subs: ServiceSubscription[] }) {
-  const total = subs.filter(s => s.active && s.monthly_cost != null).reduce((s, x) => s + Number(x.monthly_cost ?? 0), 0);
-  return (
-    <section style={{ marginBottom: 32 }}>
-      <h2 style={{ color: '#888', fontSize: 8, letterSpacing: 3, marginBottom: 12 }}>[ EST. MONTHLY BURN ]</h2>
-      <div style={{ background: '#0a0a10', border: '1px solid #222', padding: '20px 24px', display: 'inline-block' }}>
-        <div style={{ fontSize: 28, color: '#00CC44', textShadow: '0 0 20px #00CC44, 0 0 40px #00CC4466', fontVariantNumeric: 'tabular-nums', letterSpacing: 4 }}>
-          {usd(total)}
-        </div>
-        <div style={{ color: '#333', fontSize: 6, letterSpacing: 2, marginTop: 8 }}>TRACKED SERVICES · VARIABLE SPEND ESTIMATED</div>
-      </div>
-    </section>
-  );
-}
-
 // ─── main page ──────────────────────────────────────────────────────────────
 
 export default function SpendPage() {
@@ -367,23 +410,39 @@ export default function SpendPage() {
     }
   }
 
-  // Grand total of currently visible transactions
+  // Grand total computed from date-filtered transactions
   const grandTotal = txns.reduce((s, t) => s + Number(t.amount), 0);
 
+  // Estimated monthly burn from subscriptions
+  const burnTotal = subs.filter(s => s.active && s.monthly_cost != null).reduce((s, x) => s + Number(x.monthly_cost ?? 0), 0);
+
   return (
-    <div style={{ minHeight: '100vh', background: '#050508', fontFamily: '"Press Start 2P", cursive', color: '#fff', position: 'relative', paddingBottom: 40 }}>
+    <div style={{
+      minHeight: '100vh',
+      background: '#050508',
+      fontFamily: '"Press Start 2P", cursive',
+      color: '#fff',
+      position: 'relative',
+      paddingBottom: 40,
+      overflowY: 'auto',
+      overflowX: 'hidden',
+    }}>
       <CRTOverlay />
 
       {/* ── Header ── */}
-      <header style={{ padding: '16px 32px 14px', borderBottom: '1px solid #111', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 'clamp(10px, 1.6vw, 18px)', color: '#fff', letterSpacing: '6px', marginBottom: 4, textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
-            SPEND CONTROL
-          </h1>
-          <p style={{ color: '#00CC44', fontSize: 7, letterSpacing: '2px', textShadow: '0 0 8px #00CC44' }}>
-            [ SERVICES &amp; SUBSCRIPTIONS DASHBOARD ]
-          </p>
-        </div>
+      <header style={{
+        padding: '16px 32px 14px',
+        borderBottom: '1px solid #111',
+        background: '#000',
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
+        alignItems: 'center',
+        gap: 16,
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+      }}>
+        {/* Left: Sync button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
             onClick={handleSync}
@@ -398,17 +457,25 @@ export default function SpendPage() {
           >
             {syncing ? '[ SYNCING... ]' : '[ SYNC NOW ]'}
           </button>
-          <a href='/hq'
-            style={{ display: 'inline-block', fontSize: 7, color: '#555', border: '1px solid #333', padding: '6px 10px', textDecoration: 'none', letterSpacing: 2 }}
-            onMouseEnter={e => { (e.target as HTMLElement).style.color = '#fff'; (e.target as HTMLElement).style.borderColor = '#fff'; }}
-            onMouseLeave={e => { (e.target as HTMLElement).style.color = '#555'; (e.target as HTMLElement).style.borderColor = '#333'; }}
-          >
-            [ MISSION CTRL ]
-          </a>
+        </div>
+
+        {/* Center: Page title */}
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ fontSize: 'clamp(10px, 1.6vw, 18px)', color: '#fff', letterSpacing: '6px', marginBottom: 4, textShadow: '0 0 30px rgba(255,255,255,0.3)' }}>
+            SPEND CONTROL
+          </h1>
+          <p style={{ color: '#00CC44', fontSize: 7, letterSpacing: '2px', textShadow: '0 0 8px #00CC44' }}>
+            [ SERVICES &amp; SUBSCRIPTIONS DASHBOARD ]
+          </p>
+        </div>
+
+        {/* Right: Hamburger */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <HamburgerNav />
         </div>
       </header>
 
-      {/* ── Grand Total Banner ── */}
+      {/* ── Period selector + Total Spend ── */}
       <div style={{
         background: '#020206',
         borderBottom: '1px solid #1a1a1a',
@@ -445,7 +512,7 @@ export default function SpendPage() {
           })}
         </div>
 
-        {/* The dominant number */}
+        {/* Total spend number */}
         <div style={{ textAlign: 'center' }}>
           <div style={{ color: '#333', fontSize: 7, letterSpacing: 4, marginBottom: 10 }}>TOTAL SPEND</div>
           <div style={{
@@ -475,11 +542,31 @@ export default function SpendPage() {
           <div style={{ color: '#333', fontSize: 8, letterSpacing: 3, marginTop: 40 }}>LOADING...</div>
         ) : (
           <>
-            <CreditsSection />
-            <BurnEstimate subs={subs} />
+            {/* EST. MONTHLY BURN + Live Balances merged */}
+            <section style={{ marginBottom: 32 }}>
+              <h2 style={{ color: '#888', fontSize: 8, letterSpacing: 3, marginBottom: 12 }}>[ EST. MONTHLY BURN ]</h2>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{
+                  display: 'inline-block',
+                  background: '#0a0a10',
+                  border: '1px solid #222',
+                  padding: '20px 32px',
+                  marginBottom: 0,
+                }}>
+                  <div style={{ fontSize: 28, color: '#00CC44', textShadow: '0 0 20px #00CC44, 0 0 40px #00CC4466', fontVariantNumeric: 'tabular-nums', letterSpacing: 4 }}>
+                    {usd(burnTotal)}
+                  </div>
+                  <div style={{ color: '#333', fontSize: 6, letterSpacing: 2, marginTop: 8 }}>TRACKED SERVICES · VARIABLE SPEND ESTIMATED</div>
+                </div>
+              </div>
+              <LiveBalanceCards />
+            </section>
+
+            {/* Services */}
             <ServiceCardsSection subs={subs} />
+
+            {/* Service Ledger */}
             <SubscriptionsSection subs={subs} />
-            <SpendFeed txns={txns} periodLabel={`LAST ${period.days}D`} />
           </>
         )}
       </main>
