@@ -102,6 +102,94 @@ function CreditsSection() {
   );
 }
 
+
+function ServiceCardsSection({ subs }: { subs: ServiceSubscription[] }) {
+  if (subs.length === 0) return null;
+
+  const catColor = (cat: string) => cat === 'ai_llm' ? '#FF6B00' : '#4963f5';
+  const catLabel = (cat: string) => cat === 'ai_llm' ? 'AI/LLM' : 'INFRA';
+  const billingColor = (bt: string) => bt === 'subscription' ? '#00CC44' : bt === 'credits' ? '#FF1493' : '#FF8A3D';
+
+  return (
+    <section style={{ marginBottom: 32 }}>
+      <h2 style={{ color: '#888', fontSize: 8, letterSpacing: 3, marginBottom: 12 }}>[ SERVICES ]</h2>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+        {subs.map(sub => (
+          <div
+            key={sub.id}
+            style={{
+              background: '#0a0a10',
+              border: '1px solid #222',
+              padding: 16,
+              minWidth: 180,
+              maxWidth: 220,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              transition: 'border-color 0.15s',
+              cursor: 'default',
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#00FF66'; (e.currentTarget as HTMLElement).style.boxShadow = '0 0 10px #00FF6633'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = '#222'; (e.currentTarget as HTMLElement).style.boxShadow = 'none'; }}
+          >
+            {/* Service name */}
+            <div style={{ color: '#fff', fontSize: 7, letterSpacing: 1, lineHeight: 1.5 }}>{sub.service}</div>
+
+            {/* Category + billing type pills */}
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+              <span style={{
+                fontSize: 6,
+                fontFamily: '"Press Start 2P", cursive',
+                color: catColor(sub.category),
+                border: `1px solid ${catColor(sub.category)}`,
+                padding: '2px 5px',
+                letterSpacing: 1,
+                whiteSpace: 'nowrap',
+              }}>
+                {catLabel(sub.category)}
+              </span>
+              <span style={{
+                fontSize: 6,
+                fontFamily: '"Press Start 2P", cursive',
+                color: billingColor(sub.billing_type),
+                border: `1px solid ${billingColor(sub.billing_type)}`,
+                padding: '2px 5px',
+                letterSpacing: 1,
+                whiteSpace: 'nowrap',
+              }}>
+                {sub.billing_type.toUpperCase()}
+              </span>
+            </div>
+
+            {/* Monthly cost */}
+            <div style={{
+              fontSize: 16,
+              color: '#00CC44',
+              textShadow: '0 0 10px #00CC4466',
+              fontVariantNumeric: 'tabular-nums',
+              letterSpacing: 2,
+            }}>
+              {sub.monthly_cost != null ? usd(sub.monthly_cost) : 'CREDIT-BASED'}
+            </div>
+
+            {/* Bill day */}
+            <div style={{ color: '#444', fontSize: 6, letterSpacing: 1 }}>
+              {sub.billing_day ? `BILLS DAY ${sub.billing_day}` : 'VARIABLE'}
+            </div>
+
+            {/* Notes */}
+            {sub.notes && (
+              <div style={{ color: '#333', fontSize: 6, letterSpacing: 1, lineHeight: 1.6, marginTop: 2 }}>
+                {sub.notes}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function SubscriptionsSection({ subs }: { subs: ServiceSubscription[] }) {
   const aiSubs    = subs.filter(s => s.category === 'ai_llm');
   const infraSubs = subs.filter(s => s.category === 'infrastructure');
@@ -389,6 +477,7 @@ export default function SpendPage() {
           <>
             <CreditsSection />
             <BurnEstimate subs={subs} />
+            <ServiceCardsSection subs={subs} />
             <SubscriptionsSection subs={subs} />
             <SpendFeed txns={txns} periodLabel={`LAST ${period.days}D`} />
           </>
