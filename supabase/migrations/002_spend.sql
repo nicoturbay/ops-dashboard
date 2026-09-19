@@ -44,4 +44,5 @@ INSERT INTO service_subscriptions (service, category, monthly_cost, billing_type
 ('Supabase (Tremendous)', 'infrastructure', 25.00, 'subscription', 13, null),
 ('Supabase (KINCE)', 'infrastructure', 35.00, 'subscription', 9, null),
 ('Render.com', 'infrastructure', 7.00, 'subscription', 4, null),
-('Notion', 'infrastructure', 24.00, 'subscription', 30, null);
+('Notion', 'infrastructure', 24.00, 'subscription', 30, null),
+('Twilio', 'infrastructure', 5.00, 'usage', null, 'Pay-as-you-go · 2 phone numbers: (844) 523-2760 & (786) 998-5740');
